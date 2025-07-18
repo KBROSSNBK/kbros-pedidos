@@ -184,8 +184,8 @@ function modificarCantidad(index, cambio) {
       if (!nombre || carrito.length === 0) return;
       const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
       const mensaje = `Soy ${nombre}. Quiero pedir:\n` +
-        carrito.map(p => `- ${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}`).join("\n") +
-        `\nTOTAL: 💲${total}`;
+        carrito.map(p => `- ${p.nombre} x${p.cantidad} $${p.precio * p.cantidad}`).join("\n") +
+        `\nTOTAL: $${total}`;
       window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
     }
 
