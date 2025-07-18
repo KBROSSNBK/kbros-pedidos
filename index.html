@@ -89,7 +89,14 @@
     <div class="contador">👁 <span id="contadorUsuarios">0</span></div>
   </div>
   <div id="menu"></div>
-  <div class="carrito-fijo">
+
+  <div id="carrito-detalle" style="display:none; padding:1em; background:#f8f8f8; border-top:2px solid #000;">
+  <h3>🛒 Detalle del pedido</h3>
+  <ul id="detalleItems" style="list-style:none; padding-left:0;"></ul>
+</div>
+
+
+<div class="carrito-fijo">
     <button class="limpiar" onclick="limpiarCarrito()">LIMPIAR</button>
     <div class="total" id="total">💲0</div>
     <button class="pedir" id="btnPedir" onclick="enviarPedido()">PEDIR</button>
@@ -111,7 +118,7 @@
     const db = firebase.database();
 
     let carrito = [];
-    let menuVisible = true;
+    let menuVisible = false;
 
     function toggleMenu() {
       const menu = document.getElementById("menu");
@@ -131,7 +138,18 @@
       document.getElementById("total").textContent = "💲" + total;
       document.getElementById("btnPedir").classList.toggle("animar", total > 0);
       document.getElementById("contadorCarrito").textContent = carrito.reduce((a, b) => a + b.cantidad, 0);
+      mostrarDetalleCarrito();
     }
+    
+function mostrarDetalleCarrito() {
+  const lista = document.getElementById("detalleItems");
+  const panel = document.getElementById("carrito-detalle");
+  lista.innerHTML = '';
+  carrito.forEach(p => {
+    lista.innerHTML += `<li>${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad}</li>`;
+  });
+  panel.style.display = carrito.length > 0 ? "block" : "none";
+}
 
     function limpiarCarrito() {
       carrito = [];
