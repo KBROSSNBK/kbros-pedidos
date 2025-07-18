@@ -139,7 +139,7 @@
       const mensaje = `Hola! Soy ${nombre}. Quiero pedir:\n` +
                       carrito.map(p => `- ${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}`).join("\n") +
                       `\nTOTAL: 💲${total}`;
-      const numero = "56934174479";
+      const numero = "56956446048";
       const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
       window.open(url, '_blank');
     }
