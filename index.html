@@ -277,18 +277,28 @@ function modificarCantidad(index, cambio) {
       }
     }
 
-    function syncFirebase() {
-      db.ref("likes").on("value", snapshot => {
-        document.getElementById("contadorLikes").textContent = snapshot.val() || 0;
-      });
+function syncFirebase() {
+  db.ref("likes").on("value", snapshot => {
+    document.getElementById("contadorLikes").textContent = snapshot.val() || 0;
+  });
 
-      const userRef = db.ref("usuarios").push(true);
-      userRef.onDisconnect().remove();
-      db.ref("usuarios").on("value", snap => {
-        const total = snap.numChildren();
-        document.getElementById("contadorUsuarios").textContent = total;
-      });
+  const userRef = db.ref("usuarios").push(true);
+  userRef.onDisconnect().remove();
+
+  db.ref("usuarios").on("value", snap => {
+    const total = snap.numChildren();
+    document.getElementById("contadorUsuarios").textContent = total;
+  });
+
+  db.ref("colorLike").on("value", snap => {
+    const color = snap.val();
+    const likeBtn = document.getElementById("botonLike");
+    if (color && likeBtn) {
+      likeBtn.style.backgroundColor = color;
     }
+  });
+}
+
 
     renderMenu();
     renderTotal();
