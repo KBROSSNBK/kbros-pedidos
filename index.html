@@ -1,132 +1,78 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🔥 KBROS 🔥</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #fff;
-      margin: 0;
-      padding: 0;
-      color: #000;
+      margin: 0; padding: 0; background: #fff; color: #000;
     }
     header {
-      background: #000;
-      color: #fff;
-      padding: 1em;
-      text-align: center;
-      font-size: 1.6em;
-      letter-spacing: 1px;
+      background: #000; color: #fff; padding: 1em;
+      text-align: center; font-size: 1.6em; letter-spacing: 1px;
     }
     .top-buttons {
-      text-align: center;
-      margin-top: 1em;
-      display: flex;
-      justify-content: center;
-      gap: 1em;
-      flex-wrap: wrap;
+      display: flex; justify-content: center; align-items: center;
+      gap: 0.6em; flex-wrap: wrap; padding: 1em;
     }
     .top-buttons button {
-      font-size: 1.1em;
-      padding: 0.6em 1.2em;
-      border-radius: 10px;
-      background: #000;
-      color: #fff;
-      border: none;
-      cursor: pointer;
+      font-size: 1.1em; padding: 0.6em 1em;
+      border-radius: 10px; background: #000; color: #fff;
+      border: none; cursor: pointer;
     }
     .categoria-btn {
-      padding: 1em;
-      font-size: 1.2em;
-      font-weight: bold;
-      background: #f5f5f5;
-      border-top: 2px solid #000;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .categoria-btn:hover {
-      background: #e0e0e0;
+      padding: 1em; font-size: 1.2em; font-weight: bold;
+      background: #f5f5f5; border-top: 2px solid #000;
+      cursor: pointer; transition: background 0.3s ease;
     }
     .productos {
-      display: none;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 0.5em 1em 1em 1em;
-      animation: fadeIn 0.3s ease;
+      display: none; flex-wrap: wrap; justify-content: center;
+      padding: 0.5em 1em 1em 1em; animation: fadeIn 0.3s ease;
     }
     @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
+      from {opacity: 0;} to {opacity: 1;}
     }
     .producto {
-      background: #f9f9f9;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      margin: 0.4em;
-      padding: 1em;
-      width: 46%;
-      box-sizing: border-box;
-      cursor: pointer;
-      font-size: 0.95em;
-      text-align: center;
+      background: #f9f9f9; border: 1px solid #ccc;
+      border-radius: 10px; margin: 0.4em; padding: 1em;
+      width: 46%; box-sizing: border-box; cursor: pointer;
+      font-size: 0.95em; text-align: center;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       transition: transform 0.2s, background 0.2s;
     }
-    .producto:active {
-      transform: scale(0.95);
-      background: #ddd;
-    }
+    .producto:active { transform: scale(0.95); background: #ddd; }
     .carrito-fijo {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: #fff;
-      border-top: 2px solid #000;
-      display: flex;
-      justify-content: space-between;
-      padding: 1em;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+      position: fixed; bottom: 0; width: 100%;
+      background: #fff; border-top: 2px solid #000;
+      display: flex; justify-content: space-between;
+      padding: 1em; box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
       z-index: 10;
     }
     .carrito-fijo button {
-      flex: 1;
-      margin: 0 0.5em;
-      padding: 1em;
-      font-size: 1em;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.2s;
+      flex: 1; margin: 0 0.5em; padding: 1em;
+      font-size: 1em; border: none; border-radius: 8px;
+      cursor: pointer; transition: transform 0.2s;
     }
-    .carrito-fijo button:active {
-      transform: scale(0.97);
-    }
+    .carrito-fijo button:active { transform: scale(0.97); }
     .limpiar { background: #ff5c5c; color: white; }
     .pedir {
-      background: #4caf50;
-      color: white;
-      animation: none;
+      background: #4caf50; color: white; animation: none;
     }
     .pedir.animar {
       animation: bounce 0.7s ease infinite;
     }
     .total {
-      font-weight: bold;
-      align-self: center;
-      margin: 0 0.5em;
+      font-weight: bold; align-self: center; margin: 0 0.5em;
     }
-    .likes {
-      background: #000;
-      color: #fff;
+    .contador {
+      font-size: 1.1em; font-weight: bold; display: flex; align-items: center;
+      gap: 5px; background: #000; color: #fff; padding: 0.5em 1em;
       border-radius: 10px;
-      padding: 0.6em 1.2em;
-      cursor: pointer;
-      border: none;
-    }
-    .likes:active {
-      transform: scale(0.96);
     }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
@@ -135,15 +81,14 @@
   </style>
 </head>
 <body>
-  <header>😎 KBROS 😎</header>
-
+  <header>🔥 KBROS 🔥</header>
   <div class="top-buttons">
     <button onclick="toggleMenu()">MENÚ 😋</button>
-    <button class="likes" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></button>
+    <div class="contador">🛒 <span id="contadorCarrito">0</span></div>
+    <div class="contador" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></div>
+    <div class="contador">👁 <span id="contadorUsuarios">0</span></div>
   </div>
-
   <div id="menu"></div>
-
   <div class="carrito-fijo">
     <button class="limpiar" onclick="limpiarCarrito()">LIMPIAR</button>
     <div class="total" id="total">💲0</div>
@@ -151,34 +96,22 @@
   </div>
 
   <script>
-    let categorias = {
-      "COMPLETOS 🌭": [
-        ["HOT DOG - CHICO", 1200], ["HOT DOG - GRANDE", 1800],
-        ["ITALIANO - CHICO", 2000], ["ITALIANO - GRANDE", 3000],
-        ["COMPLETO - CHICO", 1800], ["COMPLETO - GRANDE", 2400],
-        ["TOCOMPLE - CHICO", 2500], ["TOCOMPLE - GRANDE", 3500],
-        ["DINAMICO - CHICO", 2500], ["DINAMICO - GRANDE", 3500],
-        ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000],
-        ["AS - CHICO", 2200], ["AS - GRANDE", 2800],
-        ["AS - ITALIANO - CHICO", 3000], ["AS - ITALIANO - GRANDE", 4000],
-        ["AS - COMPLETO - CHICO", 2800], ["AS - COMPLETO - GRANDE", 3400],
-        ["AS - TOCOMPLE - CHICO", 3500], ["AS - TOCOMPLE - GRANDE", 4500],
-        ["AS - DINAMICO - CHICO", 3500], ["AS - DINAMICO - GRANDE", 4500],
-        ["AS - QUESO - CHICO", 3000], ["AS - QUESO - GRANDE", 4000]
-      ],
-      "HAMBURGUESAS 🍔": [["HAMBURGUESA CLASICA",4500],["HAMBURGUESA ITALIANA",4500],["HAMBURGUESA AMERICANA",4500],["CHEDDAR BACON",5500],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500],["HAMBURGUESA + CHEDDAR",1000]],
-      "MECHADAS 🍔": [["MECHA-LUCO",5000],["MECHADA ITALIANO",5000],["MECHADA CHACARERO",5000],["MECHAITO",5500],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
-      "CHURRASCOS 🍔": [["CHURRAS-LUCO",4500],["CHURRASCO ITALIANO",4500],["CHURRASCO CHACARERO",4500],["CHURRASQUITO",5000],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
-      "FAJITAS 🌯": [["FAJITA PIOLA",4500],["FAJITA KBROS",5000],["FAJITA A TU PINTA",5000]],
-      "PAPAS FRITAS 🍟": [["PAPAS ALTOKE CHICA",2000],["PAPAS ALTOKE GRANDE",3500],["SALCHIPAPAS",4000],["PAPAS PIOLA",4000],["PAPAS PULENTAS",4500],["PAPAS GRINGAS",4800],["PAPAS CHIDAS",4500]],
-      "EMPANADAS 🥟": [["EMPANADAS DE QUESO X5",2000]],
-      "BEBESTIBLES 🥤": [["BEBIDA LATA",1200],["JUGO",1500],["AGUA",1000]],
-      "BEBESTIBLES ☕": [["TÉ",1000],["CAFÉ",1000]]
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDR-LnHsJ54kj-5vRzB3NoK-EB-ELD9xQs",
+      authDomain: "kbros-web.firebaseapp.com",
+      databaseURL: "https://kbros-web-default-rtdb.firebaseio.com",
+      projectId: "kbros-web",
+      storageBucket: "kbros-web.firebasestorage.app",
+      messagingSenderId: "281753184526",
+      appId: "1:281753184526:web:c6e824fefd7b261a428f5f",
+      measurementId: "G-YRHHRCGKK0"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     let carrito = [];
     let menuVisible = true;
-    let likes = localStorage.getItem("likes") || 0;
 
     function toggleMenu() {
       const menu = document.getElementById("menu");
@@ -188,11 +121,8 @@
 
     function agregar(nombre, precio) {
       const item = carrito.find(p => p.nombre === nombre);
-      if (item) {
-        item.cantidad++;
-      } else {
-        carrito.push({ nombre, precio, cantidad: 1 });
-      }
+      if (item) item.cantidad++;
+      else carrito.push({ nombre, precio, cantidad: 1 });
       renderTotal();
     }
 
@@ -200,6 +130,7 @@
       const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
       document.getElementById("total").textContent = "💲" + total;
       document.getElementById("btnPedir").classList.toggle("animar", total > 0);
+      document.getElementById("contadorCarrito").textContent = carrito.reduce((a, b) => a + b.cantidad, 0);
     }
 
     function limpiarCarrito() {
@@ -212,21 +143,23 @@
       if (!nombre || carrito.length === 0) return;
       const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
       const mensaje = `Hola! Soy ${nombre}. Quiero pedir:\n` +
-                      carrito.map(p => `- ${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}`).join("\n") +
-                      `\nTOTAL: 💲${total}`;
-      const numero = "56956446048";
-      const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
-      window.open(url, '_blank');
+        carrito.map(p => `- ${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}`).join("\n") +
+        `\nTOTAL: 💲${total}`;
+      window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
     }
 
     function sumarLike() {
-      likes++;
-      localStorage.setItem("likes", likes);
-      document.getElementById("contadorLikes").textContent = likes;
+      db.ref("likes").transaction(current => (current || 0) + 1);
     }
 
     function renderMenu() {
-      const cont = document.getElementById('menu');
+      const categorias = {
+        "COMPLETOS 🌭": [["HOT DOG - CHICO", 1200], ["HOT DOG - GRANDE", 1800]],
+        "HAMBURGUESAS 🍔": [["HAMBURGUESA CLASICA", 4500]]
+        // Agrega más categorías como gustes
+      };
+
+      const cont = document.getElementById("menu");
       cont.innerHTML = '';
       let active = null;
 
@@ -234,9 +167,9 @@
         const btn = document.createElement("div");
         btn.className = "categoria-btn";
         btn.textContent = cat;
-
         const box = document.createElement("div");
         box.className = "productos";
+
         categorias[cat].forEach(([nombre, precio]) => {
           const prod = document.createElement("div");
           prod.className = "producto";
@@ -246,24 +179,32 @@
         });
 
         btn.onclick = () => {
-          document.querySelectorAll('.productos').forEach(p => p.style.display = 'none');
-          if (active === box) {
-            box.style.display = 'none';
-            active = null;
-          } else {
-            box.style.display = 'flex';
-            active = box;
-          }
+          document.querySelectorAll(".productos").forEach(p => p.style.display = "none");
+          if (active === box) { box.style.display = "none"; active = null; }
+          else { box.style.display = "flex"; active = box; }
         };
 
         cont.appendChild(btn);
         cont.appendChild(box);
       }
+    }
 
-      document.getElementById("contadorLikes").textContent = likes;
+    function syncFirebase() {
+      db.ref("likes").on("value", snapshot => {
+        document.getElementById("contadorLikes").textContent = snapshot.val() || 0;
+      });
+
+      const userRef = db.ref("usuarios").push(true);
+      userRef.onDisconnect().remove();
+      db.ref("usuarios").on("value", snap => {
+        const total = snap.numChildren();
+        document.getElementById("contadorUsuarios").textContent = total;
+      });
     }
 
     renderMenu();
+    renderTotal();
+    syncFirebase();
   </script>
 </body>
 </html>
