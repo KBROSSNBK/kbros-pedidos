@@ -20,6 +20,23 @@
       font-size: 1.6em;
       letter-spacing: 1px;
     }
+    .top-buttons {
+      text-align: center;
+      margin-top: 1em;
+      display: flex;
+      justify-content: center;
+      gap: 1em;
+      flex-wrap: wrap;
+    }
+    .top-buttons button {
+      font-size: 1.1em;
+      padding: 0.6em 1.2em;
+      border-radius: 10px;
+      background: #000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
     .categoria-btn {
       padding: 1em;
       font-size: 1.2em;
@@ -100,6 +117,17 @@
       align-self: center;
       margin: 0 0.5em;
     }
+    .likes {
+      background: #000;
+      color: #fff;
+      border-radius: 10px;
+      padding: 0.6em 1.2em;
+      cursor: pointer;
+      border: none;
+    }
+    .likes:active {
+      transform: scale(0.96);
+    }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-4px); }
@@ -107,7 +135,12 @@
   </style>
 </head>
 <body>
-  <header>🔥 KBROS 🔥</header>
+  <header>😎 KBROS 😎</header>
+
+  <div class="top-buttons">
+    <button onclick="toggleMenu()">MENÚ 😋</button>
+    <button class="likes" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></button>
+  </div>
 
   <div id="menu"></div>
 
@@ -119,20 +152,20 @@
 
   <script>
     let categorias = {
-  "COMPLETOS 🌭": [
-    ["HOT DOG - CHICO", 1200], ["HOT DOG - GRANDE", 1800],
-    ["ITALIANO - CHICO", 2000], ["ITALIANO - GRANDE", 3000],
-    ["COMPLETO - CHICO", 1800], ["COMPLETO - GRANDE", 2400],
-    ["TOCOMPLE - CHICO", 2500], ["TOCOMPLE - GRANDE", 3500],
-    ["DINAMICO - CHICO", 2500], ["DINAMICO - GRANDE", 3500],
-    ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000],
-    ["AS - CHICO", 2200], ["AS - GRANDE", 2800],
-    ["AS - ITALIANO - CHICO", 3000], ["AS - ITALIANO - GRANDE", 4000],
-    ["AS - COMPLETO - CHICO", 2800], ["AS - COMPLETO - GRANDE", 3400],
-    ["AS - TOCOMPLE - CHICO", 3500], ["AS - TOCOMPLE - GRANDE", 4500],
-    ["AS - DINAMICO - CHICO", 3500], ["AS - DINAMICO - GRANDE", 4500],
-    ["AS - QUESO - CHICO", 3000], ["AS - QUESO - GRANDE", 4000]
-  ],
+      "COMPLETOS 🌭": [
+        ["HOT DOG - CHICO", 1200], ["HOT DOG - GRANDE", 1800],
+        ["ITALIANO - CHICO", 2000], ["ITALIANO - GRANDE", 3000],
+        ["COMPLETO - CHICO", 1800], ["COMPLETO - GRANDE", 2400],
+        ["TOCOMPLE - CHICO", 2500], ["TOCOMPLE - GRANDE", 3500],
+        ["DINAMICO - CHICO", 2500], ["DINAMICO - GRANDE", 3500],
+        ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000],
+        ["AS - CHICO", 2200], ["AS - GRANDE", 2800],
+        ["AS - ITALIANO - CHICO", 3000], ["AS - ITALIANO - GRANDE", 4000],
+        ["AS - COMPLETO - CHICO", 2800], ["AS - COMPLETO - GRANDE", 3400],
+        ["AS - TOCOMPLE - CHICO", 3500], ["AS - TOCOMPLE - GRANDE", 4500],
+        ["AS - DINAMICO - CHICO", 3500], ["AS - DINAMICO - GRANDE", 4500],
+        ["AS - QUESO - CHICO", 3000], ["AS - QUESO - GRANDE", 4000]
+      ],
       "HAMBURGUESAS 🍔": [["HAMBURGUESA CLASICA",4500],["HAMBURGUESA ITALIANA",4500],["HAMBURGUESA AMERICANA",4500],["CHEDDAR BACON",5500],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500],["HAMBURGUESA + CHEDDAR",1000]],
       "MECHADAS 🍔": [["MECHA-LUCO",5000],["MECHADA ITALIANO",5000],["MECHADA CHACARERO",5000],["MECHAITO",5500],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
       "CHURRASCOS 🍔": [["CHURRAS-LUCO",4500],["CHURRASCO ITALIANO",4500],["CHURRASCO CHACARERO",4500],["CHURRASQUITO",5000],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
@@ -144,6 +177,14 @@
     };
 
     let carrito = [];
+    let menuVisible = true;
+    let likes = localStorage.getItem("likes") || 0;
+
+    function toggleMenu() {
+      const menu = document.getElementById("menu");
+      menu.style.display = menuVisible ? "none" : "block";
+      menuVisible = !menuVisible;
+    }
 
     function agregar(nombre, precio) {
       const item = carrito.find(p => p.nombre === nombre);
@@ -176,6 +217,12 @@
       const numero = "56956446048";
       const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
       window.open(url, '_blank');
+    }
+
+    function sumarLike() {
+      likes++;
+      localStorage.setItem("likes", likes);
+      document.getElementById("contadorLikes").textContent = likes;
     }
 
     function renderMenu() {
@@ -212,6 +259,8 @@
         cont.appendChild(btn);
         cont.appendChild(box);
       }
+
+      document.getElementById("contadorLikes").textContent = likes;
     }
 
     renderMenu();
