@@ -34,6 +34,21 @@
       display: none; flex-wrap: wrap; justify-content: center;
       padding: 0.5em 1em 1em 1em; animation: fadeIn 0.3s ease;
     }
+button.clickeado {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+.contador.coloreado {
+  animation: cambiarColor 0.8s ease;
+}
+
+@keyframes cambiarColor {
+  0% { background-color: #000; }
+  50% { background-color: var(--color-random); }
+  100% { background-color: #000; }
+}
+
     @keyframes fadeIn {
       from {opacity: 0;} to {opacity: 1;}
     }
@@ -83,9 +98,9 @@
 <body>
   <header>🔥 KBROS 🔥</header>
   <div class="top-buttons">
-    <button onclick="toggleMenu()">MENÚ 😋</button>
-    <div class="contador" onclick="mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
-    <div class="contador" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></div>
+    <button onclick="feedbackBoton(this); toggleMenu()">MENÚ 😋</button>
+    <div class="contador" onclick="feedbackBoton(this); mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
+    <div class="contador" id="botonLike" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></div>
     <div class="contador">👁 <span id="contadorUsuarios">0</span></div>
   </div>
   <div id="menu"></div>
@@ -125,6 +140,11 @@
       menu.style.display = menuVisible ? "none" : "block";
       menuVisible = !menuVisible;
     }
+function feedbackBoton(elemento) {
+  if (!elemento) return;
+  elemento.classList.add("clickeado");
+  setTimeout(() => elemento.classList.remove("clickeado"), 200);
+}
 
     function agregar(nombre, precio) {
       const item = carrito.find(p => p.nombre === nombre);
@@ -189,9 +209,17 @@ function modificarCantidad(index, cambio) {
       window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
     }
 
-    function sumarLike() {
-      db.ref("likes").transaction(current => (current || 0) + 1);
-    }
+   function sumarLike() {
+  const el = document.getElementById("botonLike");
+  if (el) {
+    const randomColor = "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    el.style.setProperty("--color-random", randomColor);
+    el.style.backgroundColor = randomColor;
+    setTimeout(() => el.style.backgroundColor = "#000", 500);
+  }
+  db.ref("likes").transaction(current => (current || 0) + 1);
+}
+
 
     function renderMenu() {
       const categorias = {
