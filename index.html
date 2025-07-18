@@ -84,7 +84,7 @@
   <header>🔥 KBROS 🔥</header>
   <div class="top-buttons">
     <button onclick="toggleMenu()">MENÚ 😋</button>
-    <div class="contador">🛒 <span id="contadorCarrito">0</span></div>
+    <div class="contador" onclick="mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
     <div class="contador" onclick="sumarLike()">❤ <span id="contadorLikes">0</span></div>
     <div class="contador">👁 <span id="contadorUsuarios">0</span></div>
   </div>
@@ -141,10 +141,7 @@
       mostrarDetalleCarrito();
     }
     
-function mostrarDetalleCarrito() {
-  // Ocultar menú si está abierto
-  if (menuVisible) toggleMenu();
-
+function mostrarDetalleCarrito(forceShow = false) {
   const lista = document.getElementById("detalleItems");
   const panel = document.getElementById("carrito-detalle");
   lista.innerHTML = '';
@@ -159,8 +156,12 @@ function mostrarDetalleCarrito() {
     `;
   });
 
-  panel.style.display = carrito.length > 0 ? "block" : "none";
+  // solo mostrar el panel si es forzado o ya está visible
+  if (forceShow || panel.style.display === "block") {
+    panel.style.display = carrito.length > 0 ? "block" : "none";
+  }
 }
+
     
 function modificarCantidad(index, cambio) {
   carrito[index].cantidad += cambio;
