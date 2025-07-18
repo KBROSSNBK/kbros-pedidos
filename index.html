@@ -142,14 +142,36 @@
     }
     
 function mostrarDetalleCarrito() {
+  // Ocultar menú si está abierto
+  if (menuVisible) toggleMenu();
+
   const lista = document.getElementById("detalleItems");
   const panel = document.getElementById("carrito-detalle");
   lista.innerHTML = '';
-  carrito.forEach(p => {
-    lista.innerHTML += `<li>${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad}</li>`;
+
+  carrito.forEach((p, i) => {
+    lista.innerHTML += `
+      <li>
+        ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
+        <button onclick="modificarCantidad(${i}, -1)">➖</button>
+        <button onclick="modificarCantidad(${i}, 1)">➕</button>
+      </li>
+    `;
   });
+
   panel.style.display = carrito.length > 0 ? "block" : "none";
 }
+    
+function modificarCantidad(index, cambio) {
+  carrito[index].cantidad += cambio;
+
+  if (carrito[index].cantidad <= 0) {
+    carrito.splice(index, 1); // elimina el producto
+  }
+
+  renderTotal(); // esto vuelve a mostrar todo actualizado
+}
+
 
     function limpiarCarrito() {
       carrito = [];
