@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔥 KBROS 🔥</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+      color: #000;
+    }
+    header {
+      background: #000;
+      color: #fff;
+      padding: 1em;
+      text-align: center;
+      font-size: 1.5em;
+    }
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 1em;
+    }
+    .producto {
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin: 0.5em;
+      padding: 1em;
+      width: 40%;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+    .carrito {
+      padding: 1em;
+    }
+    .carrito-lista {
+      margin-top: 1em;
+    }
+    .botones {
+      margin-top: 1em;
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      padding: 1em;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .limpiar { background: #ff5c5c; color: white; }
+    .pedir { background: #4caf50; color: white; }
+  </style>
+</head>
+<body>
+  <header>🔥 KBROS 🔥</header>
+
+  <div class="menu" id="menu">
+    <div class="producto" onclick="agregar('Churrasco Italiano', 3000)">Churrasco Italiano 💲3000</div>
+    <div class="producto" onclick="agregar('Empanada Queso', 1500)">Empanada Queso 💲1500</div>
+    <div class="producto" onclick="agregar('Completo Mayo', 1800)">Completo Mayo 💲1800</div>
+    <div class="producto" onclick="agregar('Papas Fritas', 2000)">Papas Fritas 💲2000</div>
+  </div>
+
+  <div class="carrito" id="carrito">
+    <h2>🛒 Carrito</h2>
+    <div class="carrito-lista" id="carrito-lista"></div>
+    <div class="botones">
+      <button class="limpiar" onclick="limpiarCarrito()">LIMPIAR</button>
+      <button class="pedir" onclick="enviarPedido()">PEDIR</button>
+    </div>
+  </div>
+
+  <script>
+    let carrito = [];
+
+    function agregar(nombre, precio) {
+      const item = carrito.find(p => p.nombre === nombre);
+      if (item) {
+        item.cantidad++;
+      } else {
+        carrito.push({ nombre, precio, cantidad: 1 });
+      }
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const cont = document.getElementById('carrito-lista');
+      cont.innerHTML = '';
+      carrito.forEach(p => {
+        cont.innerHTML += `<div>${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}</div>`;
+      });
+    }
+
+    function limpiarCarrito() {
+      carrito = [];
+      renderCarrito();
+    }
+
+    function enviarPedido() {
+      const nombre = prompt("Ingresa tu nombre:");
+      if (!nombre || carrito.length === 0) return;
+      const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
+      const mensaje = `Hola! Soy ${nombre}. Quiero pedir:\n` +
+                      carrito.map(p => `- ${p.nombre} x${p.cantidad} 💲${p.precio * p.cantidad}`).join("\n") +
+                      `\nTOTAL: 💲${total}`;
+      const numero = "56934174479";
+      const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
