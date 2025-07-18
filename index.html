@@ -209,16 +209,22 @@ function modificarCantidad(index, cambio) {
       window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
     }
 
-   function sumarLike() {
+function sumarLike() {
   const el = document.getElementById("botonLike");
   if (el) {
     const randomColor = "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
     el.style.setProperty("--color-random", randomColor);
     el.style.backgroundColor = randomColor;
+
+
+    db.ref("colorLike").set(randomColor);
+
     setTimeout(() => el.style.backgroundColor = "#000", 500);
   }
+
   db.ref("likes").transaction(current => (current || 0) + 1);
 }
+
 
 
     function renderMenu() {
