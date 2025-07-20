@@ -258,16 +258,24 @@ async function enviarPedido() {
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-  let mensaje = `Soy ${nombre}\nQuiero - *${modo}*\nContaco: +56${telefono}\n\n*Detalle del pedido:*\n`;
-  carrito.forEach(p => {
-    mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
-  });
+let mensaje = `Soy ${nombre}\nQuiero - ${modo}`;
 
-  if (modo === "DELIVERY") {
-    mensaje += `\n*Delivery:* $${costoDelivery}\n${direccionTexto}`;
-  }
+if (modo === "DELIVERY") {
+  mensaje += `\nUbicación: https://www.google.com/maps?q=${ubicacionCliente}`;
+  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km`;
+}
 
-  mensaje += `\n\n*TOTAL:* $${totalFinal}`;
+mensaje += `\nContaco: +56${telefono}\n\nDetalle del pedido:\n`;
+
+carrito.forEach(p => {
+  mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
+});
+
+mensaje += `\nSubTotal: $${totalPedido}`;
+if (modo === "DELIVERY") mensaje += `\nDelivery: $${costoDelivery}`;
+
+mensaje += `\n\nTOTAL: $${totalFinal}`;
+
 
   const wsp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
   window.open(wsp, "_blank");
