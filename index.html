@@ -215,6 +215,18 @@ function enviarPedido() {
   const metodo = confirm("¿Quieres DELIVERY 🛵?\nPresiona 'Aceptar' para Delivery o 'Cancelar' para Retiro 📍");
 
   const nombre = prompt("Ingresa tu nombre:");
+if (!nombre) return;
+
+let numero = prompt("Ingresa tu número de WhatsApp (solo los 9 dígitos después del +56):");
+
+if (!numero || !/^\d{9}$/.test(numero)) {
+  alert("Número inválido. Debes ingresar exactamente 9 dígitos (ej: 912345678)");
+  return;
+}
+
+numero = "+56" + numero;
+
+
   if (!nombre) return;
 
   const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
@@ -353,7 +365,14 @@ navigator.geolocation.getCurrentPosition(
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clienteLat}&lon=${clienteLng}`)
       .then(response => response.json())
       .then(data => {
-        const direccion = data.display_name || "Ubicación no disponible";
+        const { road, neighbourhood, suburb, town, city, municipality } = data.address;
+
+const direccion = [
+  road || '',
+  neighbourhood || suburb || '',
+  town || city || municipality || ''
+].filter(Boolean).join(', ');
+
 
         const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
         let kmRedondeado = Math.round(distanciaKm);
@@ -366,11 +385,13 @@ navigator.geolocation.getCurrentPosition(
         const totalFinal = total + costoDelivery;
 
         const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
-          `Dirección aproximada: ${direccion}\n` +
-          `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
-          `Costo delivery: $${costoDelivery}\n\n` +
-          `Pedido:\n${resumen}\n` +
-          `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
+  `Número del cliente: ${numero}\n` +
+  `Dirección aproximada: ${direccion}\n` +
+  `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
+  `Costo delivery: $${costoDelivery}\n\n` +
+  `Pedido:\n${resumen}\n` +
+  `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
+
 
         window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
       })
