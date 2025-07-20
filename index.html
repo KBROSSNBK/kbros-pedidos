@@ -332,7 +332,12 @@ function obtenerUbicacionGPS() {
     `;
     document.body.appendChild(overlay);
 
-    const mapa = L.map("mapa").setView([-33.6067, -70.6861], 16); // Ubicación por defecto: KBROS
+    const ubicacionKBROS = [-33.6067, -70.6861]; // Dirección fija del local
+const mapa = L.map("mapa").setView(ubicacionKBROS, 16);
+
+// 🔥 Añade marcador del local
+L.marker(ubicacionKBROS).addTo(mapa).bindPopup("🔰KBROS🔰").openPopup();
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
     }).addTo(mapa);
