@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔥 KBROS 🔥</title>
+  <title>😎 KBROS 😎</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
@@ -114,6 +114,9 @@ button.clickeado {
       50% { transform: translateY(-4px); }
     }
   </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 </head>
 <body>
   <header>✌ KBROS ✌</header>
@@ -312,12 +315,61 @@ function elegirModoEntrega() {
 
 function obtenerUbicacionGPS() {
   return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      err => reject(err)
-    );
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.background = "rgba(0,0,0,0.8)";
+    overlay.style.zIndex = 9999;
+    overlay.innerHTML = `
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:1em;border-radius:10px;width:90%;max-width:500px;">
+        <h3 style="margin:0 0 10px 0;">📍 Selecciona dónde quieres tu pedido:</h3>
+        <div id="mapa" style="height:300px;border-radius:8px;"></div>
+        <button id="confirmarUbicacion" style="margin-top:10px;padding:10px 15px;font-weight:bold;">CONFIRMAR UBICACIÓN</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const mapa = L.map("mapa").setView([-33.6067, -70.6861], 16); // Ubicación por defecto: KBROS
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+    }).addTo(mapa);
+
+    let marcador = null;
+    let coordenadas = null;
+
+    mapa.on("click", function (e) {
+      if (marcador) marcador.remove();
+      marcador = L.marker(e.latlng).addTo(mapa);
+      coordenadas = e.latlng;
+    });
+
+    // Centrar en ubicación del cliente si se permite
+    mapa.locate({ setView: true, maxZoom: 17 });
+
+    mapa.on("locationfound", function (e) {
+      // Círculo de referencia visual
+      L.circle(e.latlng, { radius: 50, color: "#2c7" }).addTo(mapa);
+    });
+
+    mapa.on("locationerror", function () {
+      console.log("No se pudo obtener la ubicación del cliente automáticamente.");
+    });
+
+    document.getElementById("confirmarUbicacion").onclick = () => {
+      if (!coordenadas) {
+        alert("Haz clic en el mapa para seleccionar tu ubicación.");
+        return;
+      }
+      document.body.removeChild(overlay);
+      resolve({ lat: coordenadas.lat, lng: coordenadas.lng });
+    };
   });
 }
+
+
 
 async function calcularDistanciaAuto(latCliente, lngCliente) {
   const local = { lat: -33.60675364336594, lng: -70.68617400931403 }; // Cambia si la ubicación del local cambia
