@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -175,13 +174,13 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
-    lista.innerHTML += `
+    lista.innerHTML += 
       <li>
         ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
         <button onclick="modificarCantidad(${i}, -1)">➖</button>
         <button onclick="modificarCantidad(${i}, 1)">➕</button>
       </li>
-    `;
+    ;
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -215,34 +214,22 @@ function enviarPedido() {
   const metodo = confirm("¿Quieres DELIVERY 🛵?\nPresiona 'Aceptar' para Delivery o 'Cancelar' para Retiro 📍");
 
   const nombre = prompt("Ingresa tu nombre:");
-if (!nombre) return;
-
-let numero = prompt("Ingresa tu número de WhatsApp (solo los 9 dígitos después del +56):");
-
-if (!numero || !/^\d{9}$/.test(numero)) {
-  alert("Número inválido. Debes ingresar exactamente 9 dígitos (ej: 912345678)");
-  return;
-}
-
-numero = "+56" + numero;
-
-
   if (!nombre) return;
 
   const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
-  const resumen = carrito.map(p => `- ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}`).join("\n");
+  const resumen = carrito.map(p => - ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}).join("\n");
 
 if (metodo) {
   // DELIVERY
   alert("En el siguiente paso te pediremos tu ubicación 📍");
 
-  getUbicacionYEnviar(nombre, numero, resumen, total);
+  getUbicacionYEnviar(nombre, resumen, total);
 }
 
   else {
     // RETIRO
-    const mensaje = `Soy ${nombre}. Retiro en el local.\nQuiero pedir:\n${resumen}\nTOTAL: ${total}`;
-    window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+    const mensaje = Soy ${nombre}. Retiro en el local.\nQuiero pedir:\n${resumen}\nTOTAL: ${total};
+    window.open(https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}, "_blank");
   }
 }
 
@@ -308,7 +295,7 @@ function sumarLike() {
         categorias[cat].forEach(([nombre, precio]) => {
           const prod = document.createElement("div");
           prod.className = "producto";
-          prod.textContent = `${nombre} 💲${precio}`;
+          prod.textContent = ${nombre} 💲${precio};
           prod.onclick = () => agregar(nombre, precio);
           box.appendChild(prod);
         });
@@ -351,58 +338,38 @@ function syncFirebase() {
     renderTotal();
     syncFirebase();
 
-function getUbicacionYEnviar(nombre, numero, resumen, total) {
-
+function getUbicacionYEnviar(nombre, resumen, total) {
   if (!navigator.geolocation) {
     alert("Tu navegador no permite acceder a la ubicación.");
     return;
   }
 
-navigator.geolocation.getCurrentPosition(
-  (pos) => {
-    const clienteLat = pos.coords.latitude;
-    const clienteLng = pos.coords.longitude;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const clienteLat = pos.coords.latitude;
+      const clienteLng = pos.coords.longitude;
 
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clienteLat}&lon=${clienteLng}`, {
-  headers: {
-    'User-Agent': 'kbros-web/1.0 (https://kbros.github.io)' // Usa tu dominio real si lo tienes
-  }
-})
-.then(response => response.json())
-.then(data => {
-  const { road, neighbourhood, suburb, town, city, municipality } = data.address;
+      const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
+      
+      let kmRedondeado = Math.floor(distanciaKm);
+let costoDelivery = 1500;
 
-  const direccion = [
-    road || '',
-    neighbourhood || suburb || '',
-    town || city || municipality || ''
-  ].filter(Boolean).join(', ');
+if (kmRedondeado > 1) {
+  costoDelivery += (kmRedondeado - 1) * 300;
+}
 
-  const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-  let kmRedondeado = Math.round(distanciaKm);
-  let costoDelivery = 1500;
 
-  if (kmRedondeado > 1) {
-    costoDelivery += (kmRedondeado - 1) * 300;
-  }
+      const mensaje = Soy ${nombre}. Quiero delivery 🏍\n +
+        Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n +
+        Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n +
+        Pedido:\n${resumen}\nTOTAL: $${total};
 
-  const totalFinal = total + costoDelivery;
-
-  const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
-    `Número del cliente: ${numero}\n` +
-    `Dirección aproximada: ${direccion}\n` +
-    `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
-    `Costo delivery: $${costoDelivery}\n\n` +
-    `Pedido:\n${resumen}\n` +
-    `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
-
-  window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
-})
-.catch((error) => {
-  console.error("❌ ERROR en reverse geocoding:", error);
-  alert("No pudimos obtener tu dirección, pero igual enviaremos el pedido.");
-});
-
+      window.open(https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}, "_blank");
+    },
+    (err) => {
+      alert("No pudimos acceder a tu ubicación: " + err.message);
+    }
+  );
 }
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
