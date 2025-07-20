@@ -554,6 +554,17 @@ function syncFirebase() {
   });
 }
 
+    function animarLogo() {
+  const logo = document.getElementById("logoKBROS");
+  const efectos = ["shake", "spin", "zoom", "bounce", "glow", "flip", "pulse", "stretch"];
+  const efecto = efectos[Math.floor(Math.random() * efectos.length)];
+  
+  logo.classList.remove("logo-anim");
+  void logo.offsetWidth; // Forzar reinicio de animación
+  logo.classList.add("logo-anim");
+  logo.style.animationName = efecto;
+}
+
 
     renderMenu();
     renderTotal();
