@@ -220,15 +220,113 @@ function modificarCantidad(index, cambio) {
       renderTotal();
     }
 
-    function enviarPedido() {
-      const nombre = prompt("Ingresa tu nombre:");
-      if (!nombre || carrito.length === 0) return;
-      const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
-      const mensaje = `Soy ${nombre}. Quiero pedir:\n` +
-        carrito.map(p => `- ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}`).join("\n") +
-        `\nTOTAL: ${total}`;
-      window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+async function enviarPedido() {
+  if (carrito.length === 0) return alert("Primero añade productos al carrito.");
+
+  const modo = await elegirModoEntrega();
+  if (!modo) return;
+
+  let costoDelivery = 0;
+  let ubicacionCliente = "";
+  let direccionTexto = "";
+  if (modo === "DELIVERY") {
+    try {
+      const coords = await obtenerUbicacionGPS();
+      ubicacionCliente = `${coords.lat},${coords.lng}`;
+      const distanciaKM = await calcularDistanciaAuto(coords.lat, coords.lng);
+      const kmRedondeado = Math.round(distanciaKM);
+      costoDelivery = kmRedondeado <= 1 ? 1500 : 1500 + (kmRedondeado - 1) * 200;
+      direccionTexto = `📍Ubicación GPS: https://www.google.com/maps?q=${coords.lat},${coords.lng} (${kmRedondeado} km aprox)`;
+    } catch (err) {
+      alert("No se pudo obtener tu ubicación. Intenta permitir el acceso al GPS.");
+      return;
     }
+  }
+
+  const nombre = prompt("¿Cuál es tu nombre?");
+  if (!nombre) return;
+
+  const telefono = prompt("Ingresa tu número de contacto (9 dígitos sin +56):");
+  if (!telefono || !/^\d{9}$/.test(telefono)) {
+    alert("Número inválido. Debe tener exactamente 9 dígitos.");
+    return;
+  }
+
+  const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
+  const totalFinal = totalPedido + costoDelivery;
+
+  let mensaje = `🚀 *NUEVO PEDIDO* - ${modo}\n👤 ${nombre}\n📞 +56${telefono}\n\n🛒 *Detalle del pedido:*\n`;
+  carrito.forEach(p => {
+    mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
+  });
+
+  if (modo === "DELIVERY") {
+    mensaje += `\n🚚 *Delivery:* $${costoDelivery}\n${direccionTexto}`;
+  }
+
+  mensaje += `\n\n💰 *TOTAL:* $${totalFinal}`;
+
+  const wsp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
+  window.open(wsp, "_blank");
+
+  carrito = [];
+  renderTotal();
+  document.getElementById("carrito-detalle").style.display = "none";
+}
+function elegirModoEntrega() {
+  return new Promise(resolve => {
+    const cont = document.createElement("div");
+    cont.style.position = "fixed";
+    cont.style.top = 0;
+    cont.style.left = 0;
+    cont.style.width = "100%";
+    cont.style.height = "100%";
+    cont.style.background = "rgba(0,0,0,0.8)";
+    cont.style.display = "flex";
+    cont.style.flexDirection = "column";
+    cont.style.justifyContent = "center";
+    cont.style.alignItems = "center";
+    cont.style.zIndex = 1000;
+    cont.innerHTML = `
+      <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;">
+        <h3>¿Cómo quieres recibir tu pedido?</h3>
+        <label><input type="radio" name="modo" value="DELIVERY"> 🚚 DELIVERY</label><br><br>
+        <label><input type="radio" name="modo" value="RETIRO"> 🏃‍♂️ RETIRO EN LOCAL</label><br><br>
+        <button style="margin-top:1em;padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
+      </div>
+    `;
+    document.body.appendChild(cont);
+
+    cont.querySelector("button").onclick = () => {
+      const seleccionado = cont.querySelector("input[name='modo']:checked");
+      const valor = seleccionado ? seleccionado.value : null;
+      if (!valor) {
+        alert("Debes seleccionar una opción.");
+        return;
+      }
+      document.body.removeChild(cont);
+      resolve(valor);
+    };
+  });
+}
+
+function obtenerUbicacionGPS() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      err => reject(err)
+    );
+  });
+}
+
+async function calcularDistanciaAuto(latCliente, lngCliente) {
+  const local = { lat: -33.466302, lng: -70.648365 }; // Cambia si la ubicación del local cambia
+  const respuesta = await fetch(`https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false`);
+  const data = await respuesta.json();
+  const metros = data.routes[0].distance;
+  return metros / 1000; // km
+}
+
 
 function sumarLike() {
   const el = document.getElementById("botonLike");
