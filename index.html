@@ -562,10 +562,11 @@ function animarLogo() {
   const efecto = efectos[Math.floor(Math.random() * efectos.length)];
 
   logo.classList.remove("logo-anim");
-  void logo.offsetWidth; // Fuerza reinicio de animación
+  void logo.offsetWidth; // Reinicia la animación
   logo.classList.add("logo-anim");
-  logo.style.animationName = efecto;
+  logo.style.animation = `${efecto} 0.6s both`;
 }
+
 
   </script>
 </body>
