@@ -174,13 +174,13 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
-    lista.innerHTML += 
-      <li>
-        ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
-        <button onclick="modificarCantidad(${i}, -1)">➖</button>
-        <button onclick="modificarCantidad(${i}, 1)">➕</button>
-      </li>
-    ;
+ lista.innerHTML += `
+  <li>
+    ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
+    <button onclick="modificarCantidad(${i}, -1)">➖</button>
+    <button onclick="modificarCantidad(${i}, 1)">➕</button>
+  </li>
+`;
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -295,7 +295,7 @@ function sumarLike() {
         categorias[cat].forEach(([nombre, precio]) => {
           const prod = document.createElement("div");
           prod.className = "producto";
-          prod.textContent = ${nombre} 💲${precio};
+          prod.textContent = `${nombre} 💲${precio}`;
           prod.onclick = () => agregar(nombre, precio);
           box.appendChild(prod);
         });
@@ -359,10 +359,10 @@ if (kmRedondeado > 1) {
 }
 
 
-      const mensaje = Soy ${nombre}. Quiero delivery 🏍\n +
-        Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n +
-        Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n +
-        Pedido:\n${resumen}\nTOTAL: $${total};
+      const mensaje = `Soy ${nombre}. Quiero delivery 🏍\n` +
+  `Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n` +
+  `Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n` +
+  `Pedido:\n${resumen}\nTOTAL: $${total}`;
 
       window.open(https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}, "_blank");
     },
