@@ -116,7 +116,7 @@ button.clickeado {
   </style>
 </head>
 <body>
-  <header>🔥 KBROS 🔥</header>
+  <header>✌ KBROS ✌</header>
   <div class="top-buttons">
     <button onclick="feedbackBoton(this); toggleMenu()">MENÚ 😋</button>
     <div class="contador" onclick="feedbackBoton(this); mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
@@ -255,7 +255,7 @@ async function enviarPedido() {
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-  let mensaje = `📝 Soy ${nombre}\ Quiero - ${modo}\n📱 +56${telefono}\n\n🛒 *Detalle del pedido:*\n`;
+  let mensaje = `Soy *${nombre}*\nQuiero - *${modo}*\nContaco: +56${telefono}\n\n*Detalle del pedido:*\n`;
   carrito.forEach(p => {
     mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
   });
@@ -320,7 +320,7 @@ function obtenerUbicacionGPS() {
 }
 
 async function calcularDistanciaAuto(latCliente, lngCliente) {
-  const local = { lat: -33.466302, lng: -70.648365 }; // Cambia si la ubicación del local cambia
+  const local = { lat: -33.60675364336594, lng: -70.68617400931403 }; // Cambia si la ubicación del local cambia
   const respuesta = await fetch(`https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false`);
   const data = await respuesta.json();
   const metros = data.routes[0].distance;
