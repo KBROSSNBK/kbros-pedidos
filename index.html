@@ -236,7 +236,7 @@ if (metodo) {
   // DELIVERY
   alert("En el siguiente paso te pediremos tu ubicación 📍");
 
-  getUbicacionYEnviar(nombre, resumen, total);
+  getUbicacionYEnviar(nombre, numero, resumen, total);
 }
 
   else {
@@ -351,7 +351,8 @@ function syncFirebase() {
     renderTotal();
     syncFirebase();
 
-function getUbicacionYEnviar(nombre, resumen, total) {
+function getUbicacionYEnviar(nombre, numero, resumen, total) {
+
   if (!navigator.geolocation) {
     alert("Tu navegador no permite acceder a la ubicación.");
     return;
