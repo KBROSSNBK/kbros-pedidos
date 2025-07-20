@@ -236,7 +236,7 @@ async function enviarPedido() {
       const distanciaKM = await calcularDistanciaAuto(coords.lat, coords.lng);
       const kmRedondeado = Math.round(distanciaKM);
       costoDelivery = kmRedondeado <= 1 ? 1500 : 1500 + (kmRedondeado - 1) * 200;
-      direccionTexto = `📍Ubicación GPS: https://www.google.com/maps?q=${coords.lat},${coords.lng} (${kmRedondeado} km aprox)`;
+      direccionTexto = `Ubicación GPS: https://www.google.com/maps?q=${coords.lat},${coords.lng} (${kmRedondeado} km aprox)`;
     } catch (err) {
       alert("No se pudo obtener tu ubicación. Intenta permitir el acceso al GPS.");
       return;
@@ -255,16 +255,16 @@ async function enviarPedido() {
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-  let mensaje = `Soy *${nombre}*\nQuiero - *${modo}*\nContaco: +56${telefono}\n\n*Detalle del pedido:*\n`;
+  let mensaje = `Soy ${nombre}\nQuiero - *${modo}*\nContaco: +56${telefono}\n\n*Detalle del pedido:*\n`;
   carrito.forEach(p => {
     mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
   });
 
   if (modo === "DELIVERY") {
-    mensaje += `\n🏍 *Delivery:* $${costoDelivery}\n${direccionTexto}`;
+    mensaje += `\n*Delivery:* $${costoDelivery}\n${direccionTexto}`;
   }
 
-  mensaje += `\n\n💲 *TOTAL:* $${totalFinal}`;
+  mensaje += `\n\n*TOTAL:* $${totalFinal}`;
 
   const wsp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
   window.open(wsp, "_blank");
