@@ -7,6 +7,20 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
+ #detalleItems button {
+    margin: 4px;
+    padding: 6px 10px;
+    font-size: 1em;
+    border: none;
+    border-radius: 6px;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #detalleItems button:hover {
+    background: #333;
+  }
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0; padding: 0; background: #fff; color: #000;
@@ -131,7 +145,7 @@ button.clickeado {
       authDomain: "kbros-web.firebaseapp.com",
       databaseURL: "https://kbros-web-default-rtdb.firebaseio.com",
       projectId: "kbros-web",
-      storageBucket: "kbros-web.firebasestorage.app",
+      storageBucket: "kbros-web.firebasestorage.com",
       messagingSenderId: "281753184526",
       appId: "1:281753184526:web:c6e824fefd7b261a428f5f",
       measurementId: "G-YRHHRCGKK0"
