@@ -345,33 +345,44 @@ function getUbicacionYEnviar(nombre, resumen, total) {
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const clienteLat = pos.coords.latitude;
-      const clienteLng = pos.coords.longitude;
+navigator.geolocation.getCurrentPosition(
+  (pos) => {
+    const clienteLat = pos.coords.latitude;
+    const clienteLng = pos.coords.longitude;
 
-      const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-      
-      let kmRedondeado = Math.round(distanciaKm);
-let costoDelivery = 1500;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clienteLat}&lon=${clienteLng}`)
+      .then(response => response.json())
+      .then(data => {
+        const direccion = data.display_name || "Ubicación no disponible";
 
-if (kmRedondeado > 1) {
-  costoDelivery += (kmRedondeado - 1) * 300;
-}
+        const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
+        let kmRedondeado = Math.round(distanciaKm);
+        let costoDelivery = 1500;
 
+        if (kmRedondeado > 1) {
+          costoDelivery += (kmRedondeado - 1) * 300;
+        }
 
-      const mensaje = `Soy ${nombre}. Quiero delivery 🏍\n` +
-        `Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n` +
-        `Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n` +
-        `Pedido:\n${resumen}\nTOTAL: $${total}`;
+        const totalFinal = total + costoDelivery;
 
-      window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
-    },
-    (err) => {
-      alert("No pudimos acceder a tu ubicación: " + err.message);
-    }
-  );
-}
+        const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
+          `Dirección aproximada: ${direccion}\n` +
+          `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
+          `Costo delivery: $${costoDelivery}\n\n` +
+          `Pedido:\n${resumen}\n` +
+          `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
+
+        window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+      })
+      .catch(() => {
+        alert("No pudimos obtener tu dirección, pero igual enviaremos el pedido.");
+      });
+  },
+  (err) => {
+    alert("No pudimos acceder a tu ubicación: " + err.message);
+  }
+);
+
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
