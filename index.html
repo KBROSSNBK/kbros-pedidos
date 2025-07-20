@@ -245,15 +245,49 @@ async function enviarPedido() {
       return;
     }
   }
+  
+function pedirNombreYContacto() {
+  return new Promise(resolve => {
+    const fondo = document.createElement("div");
+    fondo.style.position = "fixed";
+    fondo.style.top = 0;
+    fondo.style.left = 0;
+    fondo.style.width = "100%";
+    fondo.style.height = "100%";
+    fondo.style.background = "rgba(0,0,0,0.8)";
+    fondo.style.display = "flex";
+    fondo.style.justifyContent = "center";
+    fondo.style.alignItems = "center";
+    fondo.style.zIndex = 1000;
 
-  const nombre = prompt("¿Cuál es tu nombre?");
-  if (!nombre) return;
+    fondo.innerHTML = `
+      <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+        <h3>📝 Datos del cliente</h3>
+        <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+        <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+        <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
+      </div>
+    `;
 
-  const telefono = prompt("Ingresa tu número de contacto (9 dígitos sin +56):");
-  if (!telefono || !/^\d{9}$/.test(telefono)) {
-    alert("Número inválido. Debe tener exactamente 9 dígitos.");
-    return;
-  }
+    document.body.appendChild(fondo);
+
+    fondo.querySelector("button").onclick = () => {
+      const nombre = fondo.querySelector("#nombreInput").value.trim();
+      const telefono = fondo.querySelector("#telefonoInput").value.trim();
+
+      if (!nombre) return alert("Por favor ingresa tu nombre.");
+      if (!/^\d{9}$/.test(telefono)) return alert("Número inválido. Deben ser 9 dígitos.");
+
+      document.body.removeChild(fondo);
+      resolve({ nombre, telefono });
+    };
+  });
+}
+
+const datos = await pedirNombreYContacto();
+const nombre = datos.nombre;
+const telefono = datos.telefono;
+
 
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
