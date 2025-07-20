@@ -207,15 +207,30 @@ function modificarCantidad(index, cambio) {
       renderTotal();
     }
 
-    function enviarPedido() {
-      const nombre = prompt("Ingresa tu nombre:");
-      if (!nombre || carrito.length === 0) return;
-      const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
-      const mensaje = `Soy ${nombre}. Quiero pedir:\n` +
-        carrito.map(p => `- ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}`).join("\n") +
-        `\nTOTAL: ${total}`;
-      window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
-    }
+function enviarPedido() {
+  if (carrito.length === 0) return;
+
+  const metodo = confirm("¿Quieres DELIVERY 🛵?\nPresiona 'Aceptar' para Delivery o 'Cancelar' para Retiro 📍");
+
+  const nombre = prompt("Ingresa tu nombre:");
+  if (!nombre) return;
+
+  const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
+  const resumen = carrito.map(p => `- ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}`).join("\n");
+
+  if (metodo) {
+    // DELIVERY
+    alert("En el siguiente paso te pediremos tu ubicación 📍");
+    // Aquí luego agregaremos la función getUbicacionYEnviar(nombre, resumen, total)
+    window.alert("🚧 Esta parte la completaremos después con GPS o dirección.");
+
+  } else {
+    // RETIRO
+    const mensaje = `Soy ${nombre}. Retiro en el local.\nQuiero pedir:\n${resumen}\nTOTAL: ${total}`;
+    window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+  }
+}
+
 
 function sumarLike() {
   const el = document.getElementById("botonLike");
