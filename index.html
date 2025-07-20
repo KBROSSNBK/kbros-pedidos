@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>✌ KBROS ✌</title>
+  <title>🔥 KBROS 🔥</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
@@ -102,7 +102,7 @@ button.clickeado {
   </style>
 </head>
 <body>
-  <header>✌ KBROS ✌</header>
+  <header>🔥 KBROS 🔥</header>
   <div class="top-buttons">
     <button onclick="feedbackBoton(this); toggleMenu()">MENÚ 😋</button>
     <div class="contador" onclick="feedbackBoton(this); mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
@@ -174,13 +174,13 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
- lista.innerHTML += `
-  <li>
-    ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
-    <button onclick="modificarCantidad(${i}, -1)">➖</button>
-    <button onclick="modificarCantidad(${i}, 1)">➕</button>
-  </li>
-`;
+    lista.innerHTML += `
+      <li>
+        ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
+        <button onclick="modificarCantidad(${i}, -1)">➖</button>
+        <button onclick="modificarCantidad(${i}, 1)">➕</button>
+      </li>
+    `;
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -205,34 +205,16 @@ function modificarCantidad(index, cambio) {
       carrito = [];
       renderTotal();
     }
-const kbrosLat = -33.606720865222854; // 🔁 reemplaza por tu latitud real
-const kbrosLng = -70.68622370338814; // 🔁 reemplaza por tu longitud real
 
-function enviarPedido() {
-  if (carrito.length === 0) return;
-
-  const metodo = confirm("¿Quieres DELIVERY 🛵?\nPresiona 'Aceptar' para Delivery o 'Cancelar' para Retiro 📍");
-
-  const nombre = prompt("Ingresa tu nombre:");
-  if (!nombre) return;
-
-  const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
-  const resumen = carrito.map(p => - ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}).join("\n");
-
-if (metodo) {
-  // DELIVERY
-  alert("En el siguiente paso te pediremos tu ubicación 📍");
-
-  getUbicacionYEnviar(nombre, resumen, total);
-}
-
-  else {
-    // RETIRO
-    const mensaje = Soy ${nombre}. Retiro en el local.\nQuiero pedir:\n${resumen}\nTOTAL: ${total};
-    window.open(https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}, "_blank");
-  }
-}
-
+    function enviarPedido() {
+      const nombre = prompt("Ingresa tu nombre:");
+      if (!nombre || carrito.length === 0) return;
+      const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
+      const mensaje = `Soy ${nombre}. Quiero pedir:\n` +
+        carrito.map(p => `- ${p.nombre} x${p.cantidad} ${p.precio * p.cantidad}`).join("\n") +
+        `\nTOTAL: ${total}`;
+      window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+    }
 
 function sumarLike() {
   const el = document.getElementById("botonLike");
@@ -260,9 +242,8 @@ function sumarLike() {
         ["COMPLETO - CHICO", 1800], ["COMPLETO - GRANDE", 2400],
         ["TOCOMPLE - CHICO", 2500], ["TOCOMPLE - GRANDE", 3500],
         ["DINAMICO - CHICO", 2500], ["DINAMICO - GRANDE", 3500],
-        ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000],
-      ],  
-       "AS 🌭": [ 
+        ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000]]
+       "AS 🌭": [
         ["AS - CHICO", 2200], ["AS - GRANDE", 2800],
         ["AS - ITALIANO - CHICO", 3000], ["AS - ITALIANO - GRANDE", 4000],
         ["AS - COMPLETO - CHICO", 2800], ["AS - COMPLETO - GRANDE", 3400],
@@ -274,11 +255,10 @@ function sumarLike() {
       "MECHADAS 🍔": [["MECHA-LUCO",5000],["MECHADA ITALIANO",5000],["MECHADA CHACARERO",5000],["MECHAITO",5500],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
       "CHURRASCOS 🍔": [["CHURRAS-LUCO",4500],["CHURRASCO ITALIANO",4500],["CHURRASCO CHACARERO",4500],["CHURRASQUITO",5000],["CON PAPAS",1000],["PAPAS + SALSA CHEDDAR",1500]],
       "FAJITAS 🌯": [["FAJITA PIOLA",4500],["FAJITA KBROS",5000],["FAJITA A TU PINTA",5000]],
-      "PAPAS FRITAS 🍟": [["PAPAS ALTOKE CHICA",2000],["PAPAS ALTOKE GRANDE",3500],["SALCHIPAPAS",4000],["PAPAS PIOLA",4000],["PAPAS PULENTAS",4500],["PAPAS GRINGAS",4800],["PAPAS CHIDAS",4500],["PAPAS SUPREMAS🤩",5000]],
+      "PAPAS FRITAS 🍟": [["PAPAS ALTOKE CHICA",2000],["PAPAS ALTOKE GRANDE",3500],["SALCHIPAPAS",4000],["PAPAS PIOLA",4000],["PAPAS PULENTAS",4500],["PAPAS GRINGAS",4800],["PAPAS CHIDAS",4500],["PAPAS SUPREMAS",5000]],
+      "DORILOKOS 🤪": [["DORILOKOS🤩",4500]],
       "EMPANADAS 🥟": [["EMPANADAS DE QUESO X5",2000]],
-      "DORILOKOS 🤪": [["DORILOKOS",4500]],
-      "BEBESTIBLES 🥤": [["BEBIDA LATA",1200],["JUGO",1500],["AGUA",1000],],
-  
+      "BEBESTIBLES 🥤": [["BEBIDA LATA",1200],["JUGO",1500],["AGUA",1000]],
     };
 
       const cont = document.getElementById("menu");
@@ -337,57 +317,6 @@ function syncFirebase() {
     renderMenu();
     renderTotal();
     syncFirebase();
-
-function getUbicacionYEnviar(nombre, resumen, total) {
-  if (!navigator.geolocation) {
-    alert("Tu navegador no permite acceder a la ubicación.");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const clienteLat = pos.coords.latitude;
-      const clienteLng = pos.coords.longitude;
-
-      const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-      
-      let kmRedondeado = Math.round(distanciaKm);
-let costoDelivery = 1500;
-
-if (kmRedondeado > 1) {
-  costoDelivery += (kmRedondeado - 1) * 300;
-}
-
-
-      const mensaje = `Soy ${nombre}. Quiero delivery 🏍\n` +
-  `Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n` +
-  `Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n` +
-  `Pedido:\n${resumen}\nTOTAL: $${total}`;
-
-      window.open(https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}, "_blank");
-    },
-    (err) => {
-      alert("No pudimos acceder a tu ubicación: " + err.message);
-    }
-  );
-}
-
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(valor) {
-  return valor * Math.PI / 180;
-}
-
   </script>
 </body>
 </html>
