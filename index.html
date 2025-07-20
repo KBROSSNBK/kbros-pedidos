@@ -351,7 +351,14 @@ function getUbicacionYEnviar(nombre, resumen, total) {
       const clienteLng = pos.coords.longitude;
 
       const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-      const costoDelivery = Math.ceil(distanciaKm) * 300; // 💲ejemplo: $500 por km
+      
+      let kmRedondeado = Math.round(distanciaKm);
+let costoDelivery = 1500;
+
+if (kmRedondeado > 1) {
+  costoDelivery += (kmRedondeado - 1) * 300;
+}
+
 
       const mensaje = `Soy ${nombre}. Quiero delivery 🏍\n` +
         `Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n` +
