@@ -103,7 +103,7 @@ button.clickeado {
   </style>
 </head>
 <body>
-  <header>🔥 KBROS 🔥</header>
+  <header>✌ KBROS ✌</header>
   <div class="top-buttons">
     <button onclick="feedbackBoton(this); toggleMenu()">MENÚ 😋</button>
     <div class="contador" onclick="feedbackBoton(this); mostrarDetalleCarrito(true)">🛒 <span id="contadorCarrito">0</span></div>
@@ -351,9 +351,9 @@ function getUbicacionYEnviar(nombre, resumen, total) {
       const clienteLng = pos.coords.longitude;
 
       const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-      const costoDelivery = Math.ceil(distanciaKm) * 500; // 💲ejemplo: $500 por km
+      const costoDelivery = Math.ceil(distanciaKm) * 300; // 💲ejemplo: $500 por km
 
-      const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
+      const mensaje = `Soy ${nombre}. Quiero delivery 🏍\n` +
         `Ubicación aproximada: ${clienteLat.toFixed(4)}, ${clienteLng.toFixed(4)}\n` +
         `Distancia: ${distanciaKm.toFixed(2)} km\nCosto estimado de delivery: $${costoDelivery}\n\n` +
         `Pedido:\n${resumen}\nTOTAL: $${total}`;
