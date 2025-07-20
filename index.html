@@ -362,47 +362,46 @@ navigator.geolocation.getCurrentPosition(
     const clienteLat = pos.coords.latitude;
     const clienteLng = pos.coords.longitude;
 
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clienteLat}&lon=${clienteLng}`)
-      .then(response => response.json())
-      .then(data => {
-        const { road, neighbourhood, suburb, town, city, municipality } = data.address;
-
-const direccion = [
-  road || '',
-  neighbourhood || suburb || '',
-  town || city || municipality || ''
-].filter(Boolean).join(', ');
-
-
-        const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
-        let kmRedondeado = Math.round(distanciaKm);
-        let costoDelivery = 1500;
-
-        if (kmRedondeado > 1) {
-          costoDelivery += (kmRedondeado - 1) * 300;
-        }
-
-        const totalFinal = total + costoDelivery;
-
-        const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
-  `Número del cliente: ${numero}\n` +
-  `Dirección aproximada: ${direccion}\n` +
-  `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
-  `Costo delivery: $${costoDelivery}\n\n` +
-  `Pedido:\n${resumen}\n` +
-  `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
-
-
-        window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
-      })
-      .catch(() => {
-        alert("No pudimos obtener tu dirección, pero igual enviaremos el pedido.");
-      });
-  },
-  (err) => {
-    alert("No pudimos acceder a tu ubicación: " + err.message);
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clienteLat}&lon=${clienteLng}`, {
+  headers: {
+    'User-Agent': 'kbros-web/1.0 (https://kbros.github.io)' // Usa tu dominio real si lo tienes
   }
-);
+})
+.then(response => response.json())
+.then(data => {
+  const { road, neighbourhood, suburb, town, city, municipality } = data.address;
+
+  const direccion = [
+    road || '',
+    neighbourhood || suburb || '',
+    town || city || municipality || ''
+  ].filter(Boolean).join(', ');
+
+  const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
+  let kmRedondeado = Math.round(distanciaKm);
+  let costoDelivery = 1500;
+
+  if (kmRedondeado > 1) {
+    costoDelivery += (kmRedondeado - 1) * 300;
+  }
+
+  const totalFinal = total + costoDelivery;
+
+  const mensaje = `Soy ${nombre}. Quiero delivery 🛵\n` +
+    `Número del cliente: ${numero}\n` +
+    `Dirección aproximada: ${direccion}\n` +
+    `Distancia: ${distanciaKm.toFixed(2)} km (redondeado: ${kmRedondeado} km)\n` +
+    `Costo delivery: $${costoDelivery}\n\n` +
+    `Pedido:\n${resumen}\n` +
+    `Subtotal: $${total}\nDelivery: $${costoDelivery}\nTOTAL: $${totalFinal}`;
+
+  window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+})
+.catch((error) => {
+  console.error("❌ ERROR en reverse geocoding:", error);
+  alert("No pudimos obtener tu dirección, pero igual enviaremos el pedido.");
+});
+
 }
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
