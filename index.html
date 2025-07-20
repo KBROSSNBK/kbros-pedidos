@@ -351,7 +351,7 @@ function getUbicacionYEnviar(nombre, resumen, total) {
 
       const distanciaKm = calcularDistancia(clienteLat, clienteLng, kbrosLat, kbrosLng);
       
-      let kmRedondeado = Math.floor(distanciaKm);
+      let kmRedondeado = Math.round(distanciaKm);
 let costoDelivery = 1500;
 
 if (kmRedondeado > 1) {
