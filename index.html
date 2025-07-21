@@ -126,6 +126,26 @@ button.clickeado {
   animation-duration: 0.6s;
   animation-fill-mode: both;
 }
+.led-indicador {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #2ecc71 0%, #145d32 60%, #000 100%);
+  border: 6px solid #555;
+  box-shadow: 
+    inset 0 0 10px #0f0,
+    0 0 20px rgba(0,255,0,0.5),
+    0 4px 10px rgba(0,0,0,0.7);
+  margin: 10px auto;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.led-indicador.rojo {
+  background: radial-gradient(circle at center, #e74c3c 0%, #8b1e14 60%, #000 100%);
+  box-shadow:
+    inset 0 0 10px #f00,
+    0 0 20px rgba(255,0,0,0.5),
+    0 4px 10px rgba(0,0,0,0.7);
+}
 
   </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -136,6 +156,7 @@ button.clickeado {
   <header>
     
 <img src="https://kbrossnbk.github.io/kbros-pedidos/d84b860d-022c-4639-b528-f66330c3c0ef.PNG"
+  <div id="ledDelivery" class="led-indicador verde" title="Delivery disponible"></div>
      id="logoKBROS"
      onclick="animarLogo()"
      alt="KBROS Logo"
@@ -402,7 +423,7 @@ function obtenerUbicacionGPS() {
 const mapa = L.map("mapa").setView(ubicacionKBROS, 16);
 
 // 🔥 Añade marcador del local
-L.marker(ubicacionKBROS).addTo(mapa).bindPopup("🔰KBROS🔰").openPopup();
+L.marker(ubicacionKBROS).addTo(mapa).bindPopup("✌KBROS😎").openPopup();
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -546,6 +567,10 @@ function syncFirebase() {
       likeBtn.style.backgroundColor = color;
     }
   });
+    db.ref("estadoDelivery").on("value", snap => {
+    const disponible = snap.val() === true;
+    setEstadoDelivery(disponible);
+  });
 }
     
 renderMenu();
@@ -562,6 +587,24 @@ function animarLogo() {
   logo.classList.add("logo-anim");
   logo.style.animation = `${efecto} 0.6s both`;
 }
+    function setEstadoDelivery(disponible) {
+  const led = document.getElementById("ledDelivery");
+  if (!led) return;
+  led.classList.remove("verde", "rojo");
+  led.classList.add(disponible ? "verde" : "rojo");
+}
+
+document.getElementById("ledDelivery").addEventListener("click", () => {
+  const clave = prompt("🔒 Ingresa la clave para cambiar el estado de DELIVERY:");
+  if (clave === "SIXPOOL") {
+    db.ref("estadoDelivery").once("value").then(snapshot => {
+      const actual = snapshot.val();
+      db.ref("estadoDelivery").set(!actual); // alterna el estado
+    });
+  } else if (clave !== null) {
+    alert("❌ Clave incorrecta");
+  }
+});
 
 
   </script>
