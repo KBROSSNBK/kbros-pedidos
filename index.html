@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>✌ KBROS 😎</title>
+  <title>😎 KBROS 😎</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
@@ -126,30 +126,6 @@ button.clickeado {
   animation-duration: 0.6s;
   animation-fill-mode: both;
 }
-    
-.led-indicador {
-  width: 60px;
-  height: 60px;
-  border-radius: 90%;
-  background: radial-gradient(circle at center, #1dff47 10%, #0a2 25%, #222 60%);
-  border: 10px solid #777;
-  box-shadow:
-    inset 0 0 8px #0f0,
-    0 0 6px rgba(0,255,0,0.4),
-    0 0 18px rgba(0,0,0,0.7);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  z-index: 999;
-}
-
-.led-indicador.rojo {
-  background: radial-gradient(circle at center, #ff1d1d 10%, #8b1e14 25%, #222 60%);
-  box-shadow:
-    inset 0 0 8px #f00,
-    0 0 6px rgba(255,0,0,0.4),
-    0 0 18px rgba(0,0,0,0.7);
-}
-
 
   </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -157,24 +133,14 @@ button.clickeado {
 
 </head>
 <body>
-<div id="ledDelivery" class="led-indicador" title="Estado del delivery"></div>
-
-<header style="position: relative; background: #000; padding: 1em 0;">
-  <!-- LED Estado Delivery -->
-<div id="ledDelivery"
-     title="Estado de delivery"
-     class="led-indicador"
-     style="position: absolute; top: 15px; left: 15px; cursor: pointer;"></div>
-
-
-  <!-- Logo centrado -->
-  <img src="https://kbrossnbk.github.io/kbros-pedidos/d84b860d-022c-4639-b528-f66330c3c0ef.PNG"
-       id="logoKBROS"
-       onclick="animarLogo()"
-       alt="KBROS Logo"
-       style="max-width:240px;width:90%;height:auto;border-radius:12px;box-shadow:0 0 12px rgba(255,255,255,0.2);display:block;margin:0 auto;">
-</header>
-
+  <header>
+    
+<img src="https://kbrossnbk.github.io/kbros-pedidos/d84b860d-022c-4639-b528-f66330c3c0ef.PNG"
+     id="logoKBROS"
+     onclick="animarLogo()"
+     alt="KBROS Logo"
+     style="max-width:240px;width:90%;height:auto;border-radius:12px;box-shadow:0 0 12px rgba(255,255,255,0.2);cursor:pointer;">
+  </header>
 
 
 
@@ -249,13 +215,13 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
-    lista.innerHTML += `
+    lista.innerHTML += 
       <li>
         ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
         <button onclick="modificarCantidad(${i}, -1)">➖</button>
         <button onclick="modificarCantidad(${i}, 1)">➕</button>
       </li>
-    `;
+    ;
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -293,11 +259,11 @@ async function enviarPedido() {
   if (modo === "DELIVERY") {
     try {
       const coords = await obtenerUbicacionGPS();
-      ubicacionCliente = `${coords.lat},${coords.lng}`;
+      ubicacionCliente = ${coords.lat},${coords.lng};
       const distanciaKM = await calcularDistanciaAuto(coords.lat, coords.lng);
       const kmRedondeado = Math.round(distanciaKM);
       costoDelivery = kmRedondeado <= 1 ? 1500 : 1500 + (kmRedondeado - 1) * 300;
-      direccionTexto = `[VER UBICACIÓN](https://www.google.com/maps?q=${coords.lat},${coords.lng})\nDistancia aprox: ${kmRedondeado} km`;
+      direccionTexto = [VER UBICACIÓN](https://www.google.com/maps?q=${coords.lat},${coords.lng})\nDistancia aprox: ${kmRedondeado} km;
     } catch (err) {
       alert("No se pudo obtener tu ubicación. Intenta permitir el acceso al GPS.");
       return;
@@ -318,14 +284,14 @@ function pedirNombreYContacto() {
     fondo.style.alignItems = "center";
     fondo.style.zIndex = 1000;
 
-    fondo.innerHTML = `
+    fondo.innerHTML = 
       <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
         <h3>📝 Datos del cliente</h3>
         <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
         <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
         <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
       </div>
-    `;
+    ;
 
     document.body.appendChild(fondo);
 
@@ -350,26 +316,26 @@ const telefono = datos.telefono;
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-let mensaje = `Soy ${nombre}\nQuiero - ${modo}`;
+let mensaje = Soy ${nombre}\nQuiero - ${modo};
 
 if (modo === "DELIVERY") {
-  mensaje += `\nUbicación: https://www.google.com/maps?q=${ubicacionCliente}`;
-  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km`;
+  mensaje += \nUbicación: https://www.google.com/maps?q=${ubicacionCliente};
+  mensaje += \nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km;
 }
 
-mensaje += `\nContaco: +56${telefono}\n\nDetalle del pedido:\n`;
+mensaje += \nContaco: +56${telefono}\n\nDetalle del pedido:\n;
 
 carrito.forEach(p => {
-  mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
+  mensaje += • ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n;
 });
 
-mensaje += `\nSubTotal: $${totalPedido}`;
-if (modo === "DELIVERY") mensaje += `\nDelivery: $${costoDelivery}`;
+mensaje += \nSubTotal: $${totalPedido};
+if (modo === "DELIVERY") mensaje += \nDelivery: $${costoDelivery};
 
-mensaje += `\n\nTOTAL: $${totalFinal}`;
+mensaje += \n\nTOTAL: $${totalFinal};
 
 
-  const wsp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
+  const wsp = https://wa.me/56956446048?text=${encodeURIComponent(mensaje)};
   window.open(wsp, "_blank");
 
   carrito = [];
@@ -390,14 +356,14 @@ function elegirModoEntrega() {
     cont.style.justifyContent = "center";
     cont.style.alignItems = "center";
     cont.style.zIndex = 1000;
-    cont.innerHTML = `
+    cont.innerHTML = 
       <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;">
         <h3>¿Cómo quieres recibir tu pedido?</h3>
         <label><input type="radio" name="modo" value="DELIVERY"> 🚚 DELIVERY</label><br><br>
         <label><input type="radio" name="modo" value="RETIRO"> 🏃‍♂️ RETIRO EN LOCAL</label><br><br>
         <button style="margin-top:1em;padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
       </div>
-    `;
+    ;
     document.body.appendChild(cont);
 
     cont.querySelector("button").onclick = () => {
@@ -423,20 +389,20 @@ function obtenerUbicacionGPS() {
     overlay.style.height = "100%";
     overlay.style.background = "rgba(0,0,0,0.8)";
     overlay.style.zIndex = 9999;
-    overlay.innerHTML = `
+    overlay.innerHTML = 
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:1em;border-radius:10px;width:90%;max-width:500px;">
         <h3 style="margin:0 0 10px 0;">📍 Selecciona dónde quieres tu pedido:</h3>
         <div id="mapa" style="height:300px;border-radius:8px;"></div>
         <button id="confirmarUbicacion" style="margin-top:10px;padding:10px 15px;font-weight:bold;">CONFIRMAR UBICACIÓN</button>
       </div>
-    `;
+    ;
     document.body.appendChild(overlay);
 
     const ubicacionKBROS = [-33.6067, -70.6861]; // Dirección fija del local
 const mapa = L.map("mapa").setView(ubicacionKBROS, 16);
 
 // 🔥 Añade marcador del local
-L.marker(ubicacionKBROS).addTo(mapa).bindPopup("✌KBROS😎").openPopup();
+L.marker(ubicacionKBROS).addTo(mapa).bindPopup("🔰KBROS🔰").openPopup();
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -478,7 +444,7 @@ L.marker(ubicacionKBROS).addTo(mapa).bindPopup("✌KBROS😎").openPopup();
 
 async function calcularDistanciaAuto(latCliente, lngCliente) {
   const local = { lat: -33.60675364336594, lng: -70.68617400931403 }; // Cambia si la ubicación del local cambia
-  const respuesta = await fetch(`https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false`);
+  const respuesta = await fetch(https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false);
   const data = await respuesta.json();
   const metros = data.routes[0].distance;
   return metros / 1000; // km
@@ -544,7 +510,7 @@ function sumarLike() {
         categorias[cat].forEach(([nombre, precio]) => {
           const prod = document.createElement("div");
           prod.className = "producto";
-          prod.textContent = `${nombre} 💲${precio}`;
+          prod.textContent = ${nombre} 💲${precio};
           prod.onclick = () => agregar(nombre, precio);
           box.appendChild(prod);
         });
@@ -580,11 +546,6 @@ function syncFirebase() {
       likeBtn.style.backgroundColor = color;
     }
   });
-db.ref("estadoDelivery").on("value", snap => {
-  const disponible = snap.val() === true;
-  setEstadoDelivery(disponible);
-});
-
 }
     
 renderMenu();
@@ -599,43 +560,8 @@ function animarLogo() {
   logo.classList.remove("logo-anim");
   void logo.offsetWidth; // Reinicia la animación
   logo.classList.add("logo-anim");
-  logo.style.animation = `${efecto} 0.6s both`;
+  logo.style.animation = ${efecto} 0.6s both;
 }
-function setEstadoDelivery(disponible) {
-  const led = document.getElementById("ledDelivery");
-  const texto = document.getElementById("estadoTexto");
-  if (!led || !texto) return;
-
-  led.classList.remove("rojo");
-
-  if (disponible === true) {
-    texto.innerText = "✅ DELIVERY DISPONIBLE";
-    led.title = "Delivery DISPONIBLE";
-  } else {
-    texto.innerText = "⛔ DELIVERY NO DISPONIBLE";
-    led.classList.add("rojo");
-    led.title = "Delivery NO disponible";
-  }
-}
-
-document.getElementById("ledDelivery").addEventListener("click", () => {
-  const clave = prompt("🔒 ERES ADMIN?:");
-  if (clave === "SIXPOOL") {
-    db.ref("estadoDelivery").once("value").then(snapshot => {
-      let actual = snapshot.val();
-      if (actual === null || actual === undefined) {
-        actual = true;
-      }
-      const nuevoEstado = !actual;
-      db.ref("estadoDelivery").set(nuevoEstado);
-      setEstadoDelivery(nuevoEstado);
-    });
-  } else if (clave !== null) {
-    alert("❌❌❌❌❌❌");
-  }
-});
-
-
 
 
   </script>
