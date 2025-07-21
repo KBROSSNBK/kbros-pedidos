@@ -319,23 +319,26 @@ const telefono = datos.telefono;
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-let mensaje = Soy ${nombre}\nQuiero - ${modo};
+ubicacionCliente = `${coords.lat},${coords.lng}`;
+direccionTexto = `https://www.google.com/maps?q=${coords.lat},${coords.lng}\nDistancia aprox: ${kmRedondeado} km`;
+
+let mensaje = `Soy ${nombre}\nQuiero - ${modo}`;
 
 if (modo === "DELIVERY") {
-  mensaje += \nUbicación: https://www.google.com/maps?q=${ubicacionCliente};
-  mensaje += \nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km;
+  mensaje += `\nUbicación: https://www.google.com/maps?q=${ubicacionCliente}`;
+  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 300 + 1))} km`;
 }
 
-mensaje += \nContaco: +56${telefono}\n\nDetalle del pedido:\n;
+mensaje += `\nContacto: +56${telefono}\n\nDetalle del pedido:\n`;
 
 carrito.forEach(p => {
-  mensaje += • ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n;
+  mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
 });
 
-mensaje += \nSubTotal: $${totalPedido};
-if (modo === "DELIVERY") mensaje += \nDelivery: $${costoDelivery};
+mensaje += `\nSubTotal: $${totalPedido}`;
+if (modo === "DELIVERY") mensaje += `\nDelivery: $${costoDelivery}`;
+mensaje += `\n\nTOTAL: $${totalFinal}`;
 
-mensaje += \n\nTOTAL: $${totalFinal};
 
 
   const wsp = https://wa.me/56956446048?text=${encodeURIComponent(mensaje)};
@@ -513,7 +516,7 @@ function sumarLike() {
         categorias[cat].forEach(([nombre, precio]) => {
           const prod = document.createElement("div");
           prod.className = "producto";
-          prod.textContent = ${nombre} 💲${precio};
+          prod.textContent = `${nombre} 💲${precio}`;
           prod.onclick = () => agregar(nombre, precio);
           box.appendChild(prod);
         });
@@ -563,7 +566,7 @@ function animarLogo() {
   logo.classList.remove("logo-anim");
   void logo.offsetWidth; // Reinicia la animación
   logo.classList.add("logo-anim");
-  logo.style.animation = ${efecto} 0.6s both;
+  logo.style.animation = `${efecto} 0.6s both`;
 }
 
 
