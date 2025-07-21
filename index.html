@@ -127,24 +127,48 @@ button.clickeado {
   animation-fill-mode: both;
 }
 .led-indicador {
+  position: relative;
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  background: radial-gradient(circle at center, #1dff47 10%, #0a2 25%, #222 60%);
-  border: 10px solid #777;
+  /* aro metálico */
+  background: radial-gradient(circle at 30% 30%, #aaa 0%, #888 40%, #555 70%, #333 100%);
   box-shadow:
-    inset 0 0 8px #0f0,
-    0 0 6px rgba(0,255,0,0.4),
-    0 0 18px rgba(0,0,0,0.7);
-  transition: all 0.3s ease;
+    inset 0 0 4px rgba(255,255,255,0.4),
+    0 2px 4px rgba(0,0,0,0.8);
+  transition: transform 0.1s;
+}
+.led-indicador:active {
+  transform: scale(0.96);
 }
 
-.led-indicador.rojo {
-  background: radial-gradient(circle at center, #ff1d1d 10%, #8b1e14 25%, #222 60%);
+/* luz central (verde por defecto) */
+.led-indicador::after {
+  content: "";
+  position: absolute;
+  inset: 18%;              /* controla el tamaño de la luz (más alto = luz más chica) */
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #1dff47 0%, #0a2 60%, #001800 100%);
   box-shadow:
-    inset 0 0 8px #f00,
-    0 0 6px rgba(255,0,0,0.4),
-    0 0 18px rgba(0,0,0,0.7);
+    0 0 6px rgba(0,255,0,0.8),
+    0 0 16px rgba(0,255,0,0.6),
+    inset 0 0 8px rgba(255,255,255,0.3);
+  transition: all 0.25s ease;
+}
+
+/* luz roja */
+.led-indicador.rojo::after {
+  background: radial-gradient(circle at 30% 30%, #ff1d1d 0%, #8b1e14 60%, #180000 100%);
+  box-shadow:
+    0 0 6px rgba(255,0,0,0.8),
+    0 0 16px rgba(255,0,0,0.6),
+    inset 0 0 8px rgba(255,255,255,0.2);
+}
+
+/* opcional: tono apagado cuando no hay delivery */
+.led-indicador.off::after {
+  background: radial-gradient(circle at 30% 30%, #666 0%, #333 60%, #111 100%);
+  box-shadow: none;
 }
 
 
@@ -157,10 +181,11 @@ button.clickeado {
 <body>
 <header style="position: relative; background: #000; padding: 1em 0;">
   <!-- LED Estado Delivery -->
-  <div id="ledDelivery"
-       title="Estado de delivery"
-       class="led-indicador verde"
-       style="position: absolute; top: 15px; left: 15px; cursor: pointer;"></div>
+<div id="ledDelivery"
+     title="Estado de delivery"
+     class="led-indicador"
+     style="position: absolute; top: 15px; left: 15px; cursor: pointer;"></div>
+
 
   <!-- Logo centrado -->
   <img src="https://kbrossnbk.github.io/kbros-pedidos/d84b860d-022c-4639-b528-f66330c3c0ef.PNG"
@@ -598,24 +623,39 @@ function animarLogo() {
     function setEstadoDelivery(disponible) {
   const led = document.getElementById("ledDelivery");
   if (!led) return;
-  led.classList.remove("verde", "rojo");
-  led.classList.add(disponible ? "verde" : "rojo");
+  led.classList.remove("verde", "rojo", "off"); // limpiar por si acaso
+
+  if (disponible === true) {
+    led.classList.add("verde"); // esta clase no tiene estilos propios, pero nos sirve si más adelante quieres CSS
+    led.title = "Delivery DISPONIBLE";
+  } else if (disponible === false) {
+    led.classList.add("rojo");
+    led.title = "Delivery NO disponible";
+  } else {
+    // null / sin dato
+    led.classList.add("off");
+    led.title = "Delivery (sin estado)";
+  }
 }
 
+
 document.getElementById("ledDelivery").addEventListener("click", () => {
-  const clave = prompt("🔒 Ingresa la clave para cambiar el estado de DELIVERY:");
+  const clave = prompt("🔒 ERES ADMIN?:");
   if (clave === "SIXPOOL") {
     db.ref("estadoDelivery").once("value").then(snapshot => {
-      const actual = snapshot.val();
+      let actual = snapshot.val();
+      if (actual === null || actual === undefined) {
+        actual = true; // si no existe, partimos en true
+      }
       const nuevoEstado = !actual;
-db.ref("estadoDelivery").set(nuevoEstado);
-setEstadoDelivery(nuevoEstado); // Actualiza el color al tiro
-
-    });
+      db.ref("estadoDelivery").set(nuevoEstado);
+      setEstadoDelivery(nuevoEstado); // aplica al tiro
+    }).catch(err => console.error("Error leyendo estadoDelivery:", err));
   } else if (clave !== null) {
-    alert("❌ Clave incorrecta");
+    alert("❌NO ERES ADMIN!🤡");
   }
 });
+
 
 
   </script>
