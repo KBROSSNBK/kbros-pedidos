@@ -261,11 +261,11 @@ async function enviarPedido() {
   if (modo === "DELIVERY") {
     try {
       const coords = await obtenerUbicacionGPS();
-      ubicacionCliente = ${coords.lat},${coords.lng};
+      ubicacionCliente = `${coords.lat},${coords.lng}`;
       const distanciaKM = await calcularDistanciaAuto(coords.lat, coords.lng);
       const kmRedondeado = Math.round(distanciaKM);
       costoDelivery = kmRedondeado <= 1 ? 1500 : 1500 + (kmRedondeado - 1) * 300;
-      direccionTexto = [VER UBICACIÓN](https://www.google.com/maps?q=${coords.lat},${coords.lng})\nDistancia aprox: ${kmRedondeado} km;
+      direccionTexto = `https://www.google.com/maps?q=${coords.lat},${coords.lng}\nDistancia aprox: ${kmRedondeado} km`;
     } catch (err) {
       alert("No se pudo obtener tu ubicación. Intenta permitir el acceso al GPS.");
       return;
