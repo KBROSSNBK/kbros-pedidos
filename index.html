@@ -67,6 +67,10 @@ button.clickeado {
   50% { background-color: var(--color-random); }
   100% { background-color: #000; }
 }
+    
+#menu {
+  padding-bottom: 120px;
+}
 
 
     @keyframes fadeIn {
@@ -81,13 +85,27 @@ button.clickeado {
       transition: transform 0.2s, background 0.2s;
     }
     .producto:active { transform: scale(0.95); background: #ddd; }
-    .carrito-fijo {
-      position: fixed; bottom: 0; width: 100%;
-      background: #fff; border-top: 2px solid #000;
-      display: flex; justify-content: space-between;
-      padding: 1em; box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
-      z-index: 10;
-    }
+.carrito-fijo {
+  position: fixed;
+  bottom: 0; width: 100%;
+  background: #fff; border-top: 2px solid #000;
+  display: flex; justify-content: center;
+  gap: 0.6em;
+  padding: 1em; box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+  z-index: 10;
+  flex-wrap: wrap;
+}
+.carrito-fijo .limpiar, .carrito-fijo .pedir {
+  flex: 1;
+  max-width: 140px;
+}
+.total {
+  align-self: center;
+  font-weight: bold;
+  min-width: 80px;
+  text-align: center;
+}
+
     .carrito-fijo button {
       flex: 1; margin: 0 0.5em; padding: 1em;
       font-size: 1em; border: none; border-radius: 8px;
