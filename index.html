@@ -600,10 +600,10 @@ function syncFirebase() {
       likeBtn.style.backgroundColor = color;
     }
   });
-    db.ref("estadoDelivery").on("value", snap => {
-    const disponible = snap.val() === true;
-    setEstadoDelivery(disponible);
-  });
+db.ref("estadoDelivery").on("value", snap => {
+  const disponible = snap.val() === true;
+  setEstadoDelivery(disponible);
+});
 }
     
 renderMenu();
@@ -623,18 +623,19 @@ function animarLogo() {
     function setEstadoDelivery(disponible) {
   const led = document.getElementById("ledDelivery");
   if (!led) return;
-  led.classList.remove("verde", "rojo", "off"); // limpiar por si acaso
+
+  // Limpia clases anteriores
+  led.classList.remove("rojo", "off");
 
   if (disponible === true) {
-    led.classList.add("verde"); // esta clase no tiene estilos propios, pero nos sirve si más adelante quieres CSS
+    // Verde es el estado base, no necesita clase
     led.title = "Delivery DISPONIBLE";
   } else if (disponible === false) {
     led.classList.add("rojo");
     led.title = "Delivery NO disponible";
   } else {
-    // null / sin dato
     led.classList.add("off");
-    led.title = "Delivery (sin estado)";
+    led.title = "Delivery sin estado";
   }
 }
 
@@ -649,12 +650,13 @@ document.getElementById("ledDelivery").addEventListener("click", () => {
       }
       const nuevoEstado = !actual;
       db.ref("estadoDelivery").set(nuevoEstado);
-      setEstadoDelivery(nuevoEstado); // aplica al tiro
+      setEstadoDelivery(nuevoEstado); // 👈 ESTA LÍNEA ES CLAVE
     }).catch(err => console.error("Error leyendo estadoDelivery:", err));
   } else if (clave !== null) {
     alert("❌NO ERES ADMIN!🤡");
   }
 });
+
 
 
 
