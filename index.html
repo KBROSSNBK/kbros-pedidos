@@ -215,15 +215,13 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
-  
-  lista.innerHTML += `
-  <li>
-    ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
-    <button onclick="modificarCantidad(${i}, -1)">➖</button>
-    <button onclick="modificarCantidad(${i}, 1)">➕</button>
-  </li>
-`;
-
+    lista.innerHTML += `
+      <li>
+        ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
+        <button onclick="modificarCantidad(${i}, -1)">➖</button>
+        <button onclick="modificarCantidad(${i}, 1)">➕</button>
+      </li>
+    `;
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -265,7 +263,7 @@ async function enviarPedido() {
       const distanciaKM = await calcularDistanciaAuto(coords.lat, coords.lng);
       const kmRedondeado = Math.round(distanciaKM);
       costoDelivery = kmRedondeado <= 1 ? 1500 : 1500 + (kmRedondeado - 1) * 300;
-      direccionTexto = `https://www.google.com/maps?q=${coords.lat},${coords.lng}\nDistancia aprox: ${kmRedondeado} km`;
+      direccionTexto = `[VER UBICACIÓN](https://www.google.com/maps?q=${coords.lat},${coords.lng})\nDistancia aprox: ${kmRedondeado} km`;
     } catch (err) {
       alert("No se pudo obtener tu ubicación. Intenta permitir el acceso al GPS.");
       return;
@@ -287,14 +285,13 @@ function pedirNombreYContacto() {
     fondo.style.zIndex = 1000;
 
     fondo.innerHTML = `
-  <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-    <h3>📝 Datos del cliente</h3>
-    <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
-    <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
-    <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
-  </div>
-`;
-
+      <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+        <h3>📝 Datos del cliente</h3>
+        <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+        <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+        <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
+      </div>
+    `;
 
     document.body.appendChild(fondo);
 
@@ -319,17 +316,14 @@ const telefono = datos.telefono;
   const totalPedido = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
   const totalFinal = totalPedido + costoDelivery;
 
-ubicacionCliente = `${coords.lat},${coords.lng}`;
-direccionTexto = `https://www.google.com/maps?q=${coords.lat},${coords.lng}\nDistancia aprox: ${kmRedondeado} km`;
-
 let mensaje = `Soy ${nombre}\nQuiero - ${modo}`;
 
 if (modo === "DELIVERY") {
   mensaje += `\nUbicación: https://www.google.com/maps?q=${ubicacionCliente}`;
-  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 300 + 1))} km`;
+  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km`;
 }
 
-mensaje += `\nContacto: +56${telefono}\n\nDetalle del pedido:\n`;
+mensaje += `\nContaco: +56${telefono}\n\nDetalle del pedido:\n`;
 
 carrito.forEach(p => {
   mensaje += `• ${p.nombre} x${p.cantidad} = $${p.precio * p.cantidad}\n`;
@@ -337,11 +331,11 @@ carrito.forEach(p => {
 
 mensaje += `\nSubTotal: $${totalPedido}`;
 if (modo === "DELIVERY") mensaje += `\nDelivery: $${costoDelivery}`;
+
 mensaje += `\n\nTOTAL: $${totalFinal}`;
 
 
-
-  const wsp = https://wa.me/56956446048?text=${encodeURIComponent(mensaje)};
+  const wsp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
   window.open(wsp, "_blank");
 
   carrito = [];
@@ -362,14 +356,14 @@ function elegirModoEntrega() {
     cont.style.justifyContent = "center";
     cont.style.alignItems = "center";
     cont.style.zIndex = 1000;
-    cont.innerHTML = 
+    cont.innerHTML = `
       <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;">
         <h3>¿Cómo quieres recibir tu pedido?</h3>
         <label><input type="radio" name="modo" value="DELIVERY"> 🚚 DELIVERY</label><br><br>
         <label><input type="radio" name="modo" value="RETIRO"> 🏃‍♂️ RETIRO EN LOCAL</label><br><br>
         <button style="margin-top:1em;padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
       </div>
-    ;
+    `;
     document.body.appendChild(cont);
 
     cont.querySelector("button").onclick = () => {
@@ -395,13 +389,13 @@ function obtenerUbicacionGPS() {
     overlay.style.height = "100%";
     overlay.style.background = "rgba(0,0,0,0.8)";
     overlay.style.zIndex = 9999;
-    overlay.innerHTML = 
+    overlay.innerHTML = `
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:1em;border-radius:10px;width:90%;max-width:500px;">
         <h3 style="margin:0 0 10px 0;">📍 Selecciona dónde quieres tu pedido:</h3>
         <div id="mapa" style="height:300px;border-radius:8px;"></div>
         <button id="confirmarUbicacion" style="margin-top:10px;padding:10px 15px;font-weight:bold;">CONFIRMAR UBICACIÓN</button>
       </div>
-    ;
+    `;
     document.body.appendChild(overlay);
 
     const ubicacionKBROS = [-33.6067, -70.6861]; // Dirección fija del local
@@ -450,7 +444,7 @@ L.marker(ubicacionKBROS).addTo(mapa).bindPopup("🔰KBROS🔰").openPopup();
 
 async function calcularDistanciaAuto(latCliente, lngCliente) {
   const local = { lat: -33.60675364336594, lng: -70.68617400931403 }; // Cambia si la ubicación del local cambia
-  const respuesta = await fetch(https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false);
+  const respuesta = await fetch(`https://router.project-osrm.org/route/v1/driving/${lngCliente},${latCliente};${local.lng},${local.lat}?overview=false`);
   const data = await respuesta.json();
   const metros = data.routes[0].distance;
   return metros / 1000; // km
