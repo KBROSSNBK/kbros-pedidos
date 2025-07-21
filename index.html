@@ -215,13 +215,15 @@ function mostrarDetalleCarrito(forceShow = false) {
   lista.innerHTML = '';
 
   carrito.forEach((p, i) => {
-    lista.innerHTML += 
-      <li>
-        ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
-        <button onclick="modificarCantidad(${i}, -1)">➖</button>
-        <button onclick="modificarCantidad(${i}, 1)">➕</button>
-      </li>
-    ;
+  
+  lista.innerHTML += `
+  <li>
+    ${p.nombre} x${p.cantidad} = 💲${p.precio * p.cantidad} <br>
+    <button onclick="modificarCantidad(${i}, -1)">➖</button>
+    <button onclick="modificarCantidad(${i}, 1)">➕</button>
+  </li>
+`;
+
   });
 
   // solo mostrar el panel si es forzado o ya está visible
@@ -284,14 +286,15 @@ function pedirNombreYContacto() {
     fondo.style.alignItems = "center";
     fondo.style.zIndex = 1000;
 
-    fondo.innerHTML = 
-      <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-        <h3>📝 Datos del cliente</h3>
-        <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
-        <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
-        <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
-      </div>
-    ;
+    fondo.innerHTML = `
+  <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+    <h3>📝 Datos del cliente</h3>
+    <input id="nombreInput" type="text" placeholder="Tu nombre" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+    <input id="telefonoInput" type="tel" placeholder="9 dígitos (sin +56)" style="width:100%;padding:0.5em;margin-bottom:1em;border-radius:6px;border:1px solid #ccc;" />
+    <button style="padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
+  </div>
+`;
+
 
     document.body.appendChild(fondo);
 
