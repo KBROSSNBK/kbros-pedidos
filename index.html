@@ -338,7 +338,7 @@ let mensaje = `Soy ${nombre}\nQuiero - ${modo}`;
 
 if (modo === "DELIVERY") {
   mensaje += `\nUbicación: https://www.google.com/maps?q=${ubicacionCliente}`;
-  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 200 + 1))} km`;
+  mensaje += `\nDistancia: ${Math.round(costoDelivery <= 1500 ? 1 : ((costoDelivery - 1500) / 300 + 1))} km`;
 }
 
 mensaje += `\nContaco: +56${telefono}\n\nDetalle del pedido:\n`;
