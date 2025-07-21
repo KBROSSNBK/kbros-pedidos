@@ -127,49 +127,31 @@ button.clickeado {
   animation-fill-mode: both;
 }
 .led-indicador {
-  position: relative;
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  /* aro metálico */
-  background: radial-gradient(circle at 30% 30%, #aaa 0%, #888 40%, #555 70%, #333 100%);
-  box-shadow:
-    inset 0 0 4px rgba(255,255,255,0.4),
-    0 2px 4px rgba(0,0,0,0.8);
-  transition: transform 0.1s;
-}
-.led-indicador:active {
-  transform: scale(0.96);
-}
-
-/* luz central (verde por defecto) */
-.led-indicador::after {
-  content: "";
   position: absolute;
-  inset: 18%;              /* controla el tamaño de la luz (más alto = luz más chica) */
+  top: 12px;
+  left: 12px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #1dff47 0%, #0a2 60%, #001800 100%);
+  background: radial-gradient(circle at center, #1dff47 10%, #0a2 25%, #222 60%);
+  border: 10px solid #777;
   box-shadow:
-    0 0 6px rgba(0,255,0,0.8),
-    0 0 16px rgba(0,255,0,0.6),
-    inset 0 0 8px rgba(255,255,255,0.3);
-  transition: all 0.25s ease;
+    inset 0 0 8px #0f0,
+    0 0 6px rgba(0,255,0,0.4),
+    0 0 18px rgba(0,0,0,0.7);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 999;
 }
 
-/* luz roja */
-.led-indicador.rojo::after {
-  background: radial-gradient(circle at 30% 30%, #ff1d1d 0%, #8b1e14 60%, #180000 100%);
+.led-indicador.rojo {
+  background: radial-gradient(circle at center, #ff1d1d 10%, #8b1e14 25%, #222 60%);
   box-shadow:
-    0 0 6px rgba(255,0,0,0.8),
-    0 0 16px rgba(255,0,0,0.6),
-    inset 0 0 8px rgba(255,255,255,0.2);
+    inset 0 0 8px #f00,
+    0 0 6px rgba(255,0,0,0.4),
+    0 0 18px rgba(0,0,0,0.7);
 }
 
-/* opcional: tono apagado cuando no hay delivery */
-.led-indicador.off::after {
-  background: radial-gradient(circle at 30% 30%, #666 0%, #333 60%, #111 100%);
-  box-shadow: none;
-}
 
 
 
@@ -179,6 +161,8 @@ button.clickeado {
 
 </head>
 <body>
+<div id="ledDelivery" class="led-indicador" title="Estado del delivery"></div>
+
 <header style="position: relative; background: #000; padding: 1em 0;">
   <!-- LED Estado Delivery -->
 <div id="ledDelivery"
@@ -620,24 +604,20 @@ function animarLogo() {
   logo.classList.add("logo-anim");
   logo.style.animation = `${efecto} 0.6s both`;
 }
-    function setEstadoDelivery(disponible) {
+function setEstadoDelivery(disponible) {
   const led = document.getElementById("ledDelivery");
   if (!led) return;
 
-  // Limpia clases anteriores
-  led.classList.remove("rojo", "off");
+  led.classList.remove("rojo");
 
   if (disponible === true) {
-    // Verde es el estado base, no necesita clase
     led.title = "Delivery DISPONIBLE";
-  } else if (disponible === false) {
+  } else {
     led.classList.add("rojo");
     led.title = "Delivery NO disponible";
-  } else {
-    led.classList.add("off");
-    led.title = "Delivery sin estado";
   }
 }
+
 
 
 document.getElementById("ledDelivery").addEventListener("click", () => {
@@ -646,14 +626,14 @@ document.getElementById("ledDelivery").addEventListener("click", () => {
     db.ref("estadoDelivery").once("value").then(snapshot => {
       let actual = snapshot.val();
       if (actual === null || actual === undefined) {
-        actual = true; // si no existe, partimos en true
+        actual = true;
       }
       const nuevoEstado = !actual;
       db.ref("estadoDelivery").set(nuevoEstado);
-      setEstadoDelivery(nuevoEstado); // 👈 ESTA LÍNEA ES CLAVE
-    }).catch(err => console.error("Error leyendo estadoDelivery:", err));
+      setEstadoDelivery(nuevoEstado);
+    });
   } else if (clave !== null) {
-    alert("❌NO ERES ADMIN!🤡");
+    alert("❌❌❌❌❌❌");
   }
 });
 
