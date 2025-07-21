@@ -584,6 +584,7 @@ db.ref("estadoDelivery").on("value", snap => {
   const disponible = snap.val() === true;
   setEstadoDelivery(disponible);
 });
+
 }
     
 renderMenu();
@@ -602,19 +603,20 @@ function animarLogo() {
 }
 function setEstadoDelivery(disponible) {
   const led = document.getElementById("ledDelivery");
-  if (!led) return;
+  const texto = document.getElementById("estadoTexto");
+  if (!led || !texto) return;
 
   led.classList.remove("rojo");
 
   if (disponible === true) {
+    texto.innerText = "✅ DELIVERY DISPONIBLE";
     led.title = "Delivery DISPONIBLE";
   } else {
+    texto.innerText = "⛔ DELIVERY NO DISPONIBLE";
     led.classList.add("rojo");
     led.title = "Delivery NO disponible";
   }
 }
-
-
 
 document.getElementById("ledDelivery").addEventListener("click", () => {
   const clave = prompt("🔒 ERES ADMIN?:");
