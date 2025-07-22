@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>😎 KBROS 😎</title>
+  <title>✌ KBROS 😎</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
@@ -377,7 +377,7 @@ function elegirModoEntrega() {
     cont.innerHTML = `
       <div style="background:#fff;padding:2em;border-radius:10px;text-align:center;max-width:300px;">
         <h3>¿Cómo quieres recibir tu pedido?</h3>
-        <label><input type="radio" name="modo" value="DELIVERY"> 🚚 DELIVERY</label><br><br>
+        <label><input type="radio" name="modo" value="DELIVERY"> 🛵 DELIVERY</label><br><br>
         <label><input type="radio" name="modo" value="RETIRO"> 🏃‍♂️ RETIRO EN LOCAL</label><br><br>
         <button style="margin-top:1em;padding:0.6em 1.2em;font-weight:bold;">CONFIRMAR</button>
       </div>
@@ -420,7 +420,7 @@ function obtenerUbicacionGPS() {
 const mapa = L.map("mapa").setView(ubicacionKBROS, 16);
 
 // 🔥 Añade marcador del local
-L.marker(ubicacionKBROS).addTo(mapa).bindPopup("🔰KBROS🔰").openPopup();
+L.marker(ubicacionKBROS).addTo(mapa).bindPopup("✌KBROS😎").openPopup();
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -490,12 +490,12 @@ function sumarLike() {
     function renderMenu() {
       const categorias = {
       "COMPLETOS 🌭": [
-        ["HOT DOG - CHICO", 1200], ["HOT DOG - GRANDE", 1800],
-        ["ITALIANO - CHICO", 2000], ["ITALIANO - GRANDE", 3000],
-        ["COMPLETO - CHICO", 1800], ["COMPLETO - GRANDE", 2400],
-        ["TOCOMPLE - CHICO", 2500], ["TOCOMPLE - GRANDE", 3500],
-        ["DINAMICO - CHICO", 2500], ["DINAMICO - GRANDE", 3500],
-        ["CHAMO - CHICO", 2000], ["CHAMO - GRANDE", 3000]],
+        ["HOT DOG - CHICO", 1500], ["HOT DOG - GRANDE", 2100],
+        ["ITALIANO - CHICO", 2300], ["ITALIANO - GRANDE", 3500],
+        ["COMPLETO - CHICO", 2100], ["COMPLETO - GRANDE", 2900],
+        ["TOCOMPLE - CHICO", 2800], ["TOCOMPLE - GRANDE", 3900],
+        ["DINAMICO - CHICO", 2800], ["DINAMICO - GRANDE", 3700],
+        ["CHAMO - CHICO", 2300], ["CHAMO - GRANDE", 3500]],
       "AS 🌭": [
         ["AS - CHICO", 2200], ["AS - GRANDE", 2800],
         ["AS - ITALIANO - CHICO", 3000], ["AS - ITALIANO - GRANDE", 4000],
