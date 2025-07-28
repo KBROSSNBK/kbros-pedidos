@@ -535,7 +535,10 @@ function sumarLike() {
   filaHotdog.style.display = "flex";
   filaHotdog.style.alignItems = "center";
   filaHotdog.style.justifyContent = "space-between";
-  filaHotdog.style.width = "100%";
+  filaHotdog.style.width = "auto";
+  filaHotdog.style.gap = "10px";
+  filaHotdog.style.margin = "0 auto";
+
   filaHotdog.style.flexWrap = "wrap";
 
   const contHotdogs = document.createElement("div");
@@ -553,11 +556,11 @@ function sumarLike() {
     }
   });
 
-  const img = document.createElement("img");
+    const img = document.createElement("img");
   img.src = "./HOTDOGPAGINA.png";
-  img.style.maxWidth = "160px";
+  img.style.maxWidth = "120px";
+  img.style.height = "auto";
   img.style.borderRadius = "10px";
-  img.style.marginLeft = "10px";
   img.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
   img.style.flexShrink = "0";
 
