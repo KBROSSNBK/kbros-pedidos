@@ -530,13 +530,62 @@ function sumarLike() {
         const box = document.createElement("div");
         box.className = "productos";
 
-        categorias[cat].forEach(([nombre, precio]) => {
-          const prod = document.createElement("div");
-          prod.className = "producto";
-          prod.textContent = `${nombre} 💲${precio}`;
-          prod.onclick = () => agregar(nombre, precio);
-          box.appendChild(prod);
-        });
+        if (cat === "COMPLETOS 🌭") {
+  const filaHotdog = document.createElement("div");
+  filaHotdog.style.display = "flex";
+  filaHotdog.style.alignItems = "center";
+  filaHotdog.style.justifyContent = "space-between";
+  filaHotdog.style.width = "100%";
+  filaHotdog.style.flexWrap = "wrap";
+
+  const contHotdogs = document.createElement("div");
+  contHotdogs.style.display = "flex";
+  contHotdogs.style.flexDirection = "column";
+  contHotdogs.style.flex = "1";
+
+  categorias[cat].forEach(([nombre, precio]) => {
+    if (nombre.includes("HOT DOG")) {
+      const prod = document.createElement("div");
+      prod.className = "producto";
+      prod.textContent = `${nombre} 💲${precio}`;
+      prod.onclick = () => agregar(nombre, precio);
+      contHotdogs.appendChild(prod);
+    }
+  });
+
+  const img = document.createElement("img");
+  img.src = "./HOTDOGPAGINA.png";
+  img.style.maxWidth = "160px";
+  img.style.borderRadius = "10px";
+  img.style.marginLeft = "10px";
+  img.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
+  img.style.flexShrink = "0";
+
+  filaHotdog.appendChild(contHotdogs);
+  filaHotdog.appendChild(img);
+  box.appendChild(filaHotdog);
+
+  // Ahora agregamos el resto de los productos normales
+  categorias[cat].forEach(([nombre, precio]) => {
+    if (!nombre.includes("HOT DOG")) {
+      const prod = document.createElement("div");
+      prod.className = "producto";
+      prod.textContent = `${nombre} 💲${precio}`;
+      prod.onclick = () => agregar(nombre, precio);
+      box.appendChild(prod);
+    }
+  });
+} else {
+  // resto de las categorías normales
+  categorias[cat].forEach(([nombre, precio]) => {
+    const prod = document.createElement("div");
+    prod.className = "producto";
+    prod.textContent = `${nombre} 💲${precio}`;
+    prod.onclick = () => agregar(nombre, precio);
+    box.appendChild(prod);
+  });
+}
+
 
         btn.onclick = () => {
           document.querySelectorAll(".productos").forEach(p => p.style.display = "none");
