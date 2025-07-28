@@ -7,43 +7,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    .fila-hotdog {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 0 auto;
-  }
-
-  .fila-hotdog .col-hotdogs {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .fila-hotdog img {
-    max-width: 120px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    flex-shrink: 0;
-  }
-
-  @media (max-width: 600px) {
-    .fila-hotdog {
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .fila-hotdog .col-hotdogs {
-      width: 100%;
-      align-items: center;
-    }
-
-    .fila-hotdog img {
-      margin-top: 10px;
-      max-width: 140px;
-    }
-  }
  #detalleItems button {
     margin: 4px;
     padding: 6px 10px;
@@ -567,100 +530,13 @@ function sumarLike() {
         const box = document.createElement("div");
         box.className = "productos";
 
-        if (cat === "COMPLETOS 🌭") {
-  const filaHotdog = document.createElement("div");
-  filaHotdog.style.display = "flex";
-  filaHotdog.style.alignItems = "center";
-  filaHotdog.style.justifyContent = "space-between";
-  filaHotdog.style.width = "auto";
-  filaHotdog.style.gap = "10px";
-  filaHotdog.style.margin = "0 auto";
-
-  filaHotdog.style.flexWrap = "wrap";
-
-  const contHotdogs = document.createElement("div");
-  contHotdogs.style.display = "flex";
-  contHotdogs.style.flexDirection = "column";
-  contHotdogs.style.flex = "1";
-
-  if (cat === "COMPLETOS 🌭") {
-  const filaHotdog = document.createElement("div");
-  filaHotdog.className = "fila-hotdog";
-
-  const contHotdogs = document.createElement("div");
-  contHotdogs.className = "col-hotdogs";
-
-  categorias[cat].forEach(([nombre, precio]) => {
-    if (nombre.includes("HOT DOG")) {
-      const prod = document.createElement("div");
-      prod.className = "producto";
-      prod.textContent = `${nombre} 💲${precio}`;
-      prod.onclick = () => agregar(nombre, precio);
-      contHotdogs.appendChild(prod);
-    }
-  });
-
-  const img = document.createElement("img");
-  img.src = "./HOTDOGPAGINA.png";
-  img.alt = "HOT DOG";
-  filaHotdog.appendChild(contHotdogs);
-  filaHotdog.appendChild(img);
-  box.appendChild(filaHotdog);
-
-  // Agregar el resto de productos
-  categorias[cat].forEach(([nombre, precio]) => {
-    if (!nombre.includes("HOT DOG")) {
-      const prod = document.createElement("div");
-      prod.className = "producto";
-      prod.textContent = `${nombre} 💲${precio}`;
-      prod.onclick = () => agregar(nombre, precio);
-      box.appendChild(prod);
-    }
-  });
-} else {
-  categorias[cat].forEach(([nombre, precio]) => {
-    const prod = document.createElement("div");
-    prod.className = "producto";
-    prod.textContent = `${nombre} 💲${precio}`;
-    prod.onclick = () => agregar(nombre, precio);
-    box.appendChild(prod);
-  });
-}
-
-
-    const img = document.createElement("img");
-  img.src = "./HOTDOGPAGINA.png";
-  img.style.maxWidth = "120px";
-  img.style.height = "auto";
-  img.style.borderRadius = "10px";
-  img.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
-  img.style.flexShrink = "0";
-
-  filaHotdog.appendChild(contHotdogs);
-  filaHotdog.appendChild(img);
-  box.appendChild(filaHotdog);
-
-  // Ahora agregamos el resto de los productos normales
-  categorias[cat].forEach(([nombre, precio]) => {
-    if (!nombre.includes("HOT DOG")) {
-      const prod = document.createElement("div");
-      prod.className = "producto";
-      prod.textContent = `${nombre} 💲${precio}`;
-      prod.onclick = () => agregar(nombre, precio);
-      box.appendChild(prod);
-    }
-  });
-} else {
-  // resto de las categorías normales
-  categorias[cat].forEach(([nombre, precio]) => {
-    const prod = document.createElement("div");
-    prod.className = "producto";
-    prod.textContent = `${nombre} 💲${precio}`;
-    prod.onclick = () => agregar(nombre, precio);
-    box.appendChild(prod);
-  });
-}
-
+        categorias[cat].forEach(([nombre, precio]) => {
+          const prod = document.createElement("div");
+          prod.className = "producto";
+          prod.textContent = `${nombre} 💲${precio}`;
+          prod.onclick = () => agregar(nombre, precio);
+          box.appendChild(prod);
+        });
 
         btn.onclick = () => {
           document.querySelectorAll(".productos").forEach(p => p.style.display = "none");
