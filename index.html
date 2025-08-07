@@ -212,12 +212,32 @@ function feedbackBoton(elemento) {
   setTimeout(() => elemento.classList.remove("clickeado"), 200);
 }
 
-    function agregar(nombre, precio) {
-      const item = carrito.find(p => p.nombre === nombre);
-      if (item) item.cantidad++;
-      else carrito.push({ nombre, precio, cantidad: 1 });
-      renderTotal();
+function agregar(nombre, precio) {
+  const item = carrito.find(p => p.nombre === nombre);
+  if (item) item.cantidad++;
+  else carrito.push({ nombre, precio, cantidad: 1 });
+  renderTotal();
+
+  // Cambiar color temporalmente
+  const botones = document.querySelectorAll(".producto");
+  botones.forEach(btn => {
+    if (btn.textContent.startsWith(nombre)) {
+      const originalColor = btn.style.backgroundColor;
+      const originalTextColor = btn.style.color;
+
+      const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+      btn.style.backgroundColor = randomColor;
+      btn.style.color = "#fff";
+
+      setTimeout(() => {
+        btn.style.backgroundColor = originalColor || "#f9f9f9";
+        btn.style.color = originalTextColor || "#000";
+      }, 800); // vuelve al color original después de 800ms
     }
+  });
+}
+
+
 
     function renderTotal() {
       const total = carrito.reduce((sum, p) => sum + p.precio * p.cantidad, 0);
