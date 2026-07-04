@@ -7,8 +7,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #0c0c0e;
@@ -114,6 +116,8 @@
     .menu-toggle-wrap {
       display: flex;
       justify-content: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
       padding: 0 1rem 1rem;
       z-index: 2;
       position: relative;
@@ -133,6 +137,14 @@
       -webkit-tap-highlight-color: transparent;
     }
     .menu-toggle-btn:active { transform: scale(0.96); }
+    .menu-toggle-btn.secondary-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      box-shadow: none;
+      font-size: 1.1rem;
+      padding: 0.85rem 1.6rem;
+    }
 
     /* MENU */
     #menu {
@@ -238,6 +250,12 @@
       letter-spacing: 2px;
       color: var(--accent);
       margin-bottom: 0.6rem;
+    }
+    #estimadoPuntos {
+      font-size: 0.78rem;
+      color: var(--accent2);
+      margin-bottom: 0.6rem;
+      font-weight: 600;
     }
     #detalleItems { list-style: none; }
     #detalleItems li {
@@ -468,9 +486,181 @@
     @keyframes bounce-logo { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     .logo-anim { animation-duration: 0.6s; animation-fill-mode: both; }
+
+    /* ======================= K-POINTS: LOBBY ======================= */
+    .lobby-overlay {
+      position: fixed; inset: 0;
+      background: radial-gradient(circle at 50% 0%, #201408 0%, #0c0c0e 70%);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 3000;
+      padding: 1.5rem;
+    }
+    .lobby-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 22px;
+      padding: 2rem 1.6rem;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.55);
+    }
+    .lobby-logo { width: 110px; margin: 0 auto 1rem; display: block; border-radius: 14px; }
+    .lobby-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; letter-spacing: 4px; color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+    .lobby-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.8rem; }
+    .google-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; background: #fff; color: #3c4043; border: none;
+      border-radius: 12px; padding: 0.9rem; font-weight: 600; font-size: 0.95rem;
+      cursor: pointer; margin-bottom: 0.5rem; transition: transform .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .google-btn:active { transform: scale(0.97); }
+    .lobby-note { font-size: 0.75rem; color: var(--muted); margin-bottom: 1.2rem; }
+    .guest-btn {
+      width: 100%; background: transparent; border: 1px solid var(--border2);
+      color: var(--text); border-radius: 12px; padding: 0.85rem;
+      font-weight: 600; cursor: pointer; margin-bottom: 0.4rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .guest-btn:active { transform: scale(0.97); }
+
+    /* ======================= K-POINTS: TOPBAR ======================= */
+    .topbar {
+      display: none;
+      position: sticky; top: 0;
+      align-items: center; justify-content: space-between;
+      padding: 0.7rem 1rem;
+      background: rgba(18,18,20,0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      z-index: 500;
+    }
+    .topbar-points {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem; letter-spacing: 1px; color: var(--accent);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .topbar-rank { font-size: 0.7rem; color: var(--muted); margin-top: -2px; }
+    .topbar-profile { position: relative; }
+    .topbar-profile img {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 2px solid var(--accent); cursor: pointer; object-fit: cover;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .profile-dropdown {
+      display: none; position: absolute; right: 0; top: 48px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 12px; min-width: 190px; overflow: hidden;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.5); z-index: 510;
+    }
+    .profile-dropdown.show { display: block; }
+    .profile-dropdown div {
+      padding: 0.85rem 1rem; font-size: 0.88rem; cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-dropdown div:last-child { border-bottom: none; color: var(--red); }
+    .profile-dropdown div:hover { background: var(--surface3); }
+
+    /* ======================= K-POINTS: FLOATING BUTTONS ======================= */
+    .help-fab, .admin-fab {
+      position: fixed; bottom: 100px;
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 200;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .help-fab { right: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--accent); }
+    .admin-fab { left: 16px; font-size: 1.2rem; display: none; }
+
+    /* ======================= K-POINTS: PERFIL / RANGO ======================= */
+    .rank-badge {
+      display: inline-block; padding: 0.35rem 1rem; border-radius: 99px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      font-size: 0.85rem; font-weight: 600; margin-bottom: 0.8rem;
+    }
+
+    /* ======================= K-POINTS: ADMIN ======================= */
+    .admin-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 1rem;
+    }
+    .stat-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.8rem; text-align: center;
+    }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--accent); }
+    .stat-label { font-size: 0.7rem; color: var(--muted); }
+    .admin-tabs { display: flex; gap: 6px; margin-bottom: 0.9rem; }
+    .admin-tab-btn {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 10px; padding: 0.6rem;
+      font-size: 0.76rem; font-weight: 700; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .admin-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .pending-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.8rem; margin-bottom: 0.6rem; font-size: 0.85rem;
+    }
+    .admin-quick-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .admin-quick-btns button {
+      padding: 0.4rem 0.7rem; font-size: 0.78rem; border-radius: 10px;
+      border: 1px solid var(--border2); cursor: pointer; font-weight: 700;
+      background: var(--surface3); color: var(--text);
+    }
+    .admin-quick-btns button.plus { border-color: rgba(46,204,113,0.5); color: var(--green); }
+    .admin-quick-btns button.minus { border-color: rgba(255,71,87,0.5); color: var(--red); }
   </style>
 </head>
 <body>
+
+  <!-- ======================= LOBBY K-POINTS ======================= -->
+  <div class="lobby-overlay" id="lobbyOverlay">
+    <div class="lobby-card">
+      <img class="lobby-logo" src="https://kbrossnbk.github.io/kbros-pedidos/d84b860d-022c-4639-b528-f66330c3c0ef.PNG" alt="KBROS"/>
+      <div class="lobby-title">K-POINTS</div>
+      <div class="lobby-sub">El programa de fidelización de KBROS</div>
+      <button class="google-btn" id="btnGoogleLogin">
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/>
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+        </svg>
+        Iniciar sesión con Google
+      </button>
+      <div class="lobby-note">Gana K-POINTS con cada compra.</div>
+      <button class="guest-btn" id="btnGuest">Entrar sin iniciar sesión</button>
+      <div class="lobby-note" style="margin-bottom:0;">No juntarás K-POINTS.</div>
+    </div>
+  </div>
+
+  <!-- ======================= TOPBAR K-POINTS ======================= -->
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="topbar-points">⭐ <span id="topbarPuntos">0</span></div>
+      <div class="topbar-rank" id="topbarRango"></div>
+    </div>
+    <div class="topbar-profile">
+      <img id="topbarFoto" src="" alt="perfil" onclick="toggleDropdown()"/>
+      <div class="profile-dropdown" id="profileDropdown">
+        <div id="optMiPerfil">👤 Mi perfil</div>
+        <div id="optTransferir">🔁 Transferir K-Points</div>
+        <div id="optCerrarSesion">🚪 Cerrar sesión</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-fab" onclick="abrirAyuda()">?</div>
+  <div class="admin-fab" id="adminFab" onclick="abrirAdmin()">⚙️</div>
 
   <header>
     <div class="logo-wrap" onclick="animarLogo()">
@@ -494,12 +684,14 @@
 
   <div class="menu-toggle-wrap">
     <button class="menu-toggle-btn" onclick="feedbackBoton(this); toggleMenu()">VER MENÚ 😋</button>
+    <button class="menu-toggle-btn secondary-btn" onclick="abrirPedidosYa()">🛵 PEDIDOS YA</button>
   </div>
 
   <div id="menu"></div>
 
   <div id="carrito-detalle">
     <h3>🛒 TU PEDIDO</h3>
+    <div id="estimadoPuntos"></div>
     <ul id="detalleItems"></ul>
   </div>
 
@@ -523,6 +715,7 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
+  const auth = firebase.auth();
 
   let carrito = [];
   let menuVisible = false;
@@ -566,6 +759,16 @@
     document.getElementById("btnPedir").classList.toggle("animar", total > 0);
     document.getElementById("contadorCarrito").textContent = carrito.reduce((a, b) => a + b.cantidad, 0);
     mostrarDetalleCarrito();
+    // K-POINTS: puntos estimados en vivo mientras se arma el pedido
+    const estEl = document.getElementById("estimadoPuntos");
+    if (estEl) {
+      if (total > 0) {
+        const puntosEst = Math.floor(total / pointsConversion);
+        estEl.textContent = "✨ Con esta compra ganarás aprox. " + puntosEst + " K-POINTS";
+      } else {
+        estEl.textContent = "";
+      }
+    }
   }
 
   function mostrarDetalleCarrito(forceShow = false) {
@@ -740,6 +943,30 @@
     mensaje += `\nSubTotal: $${totalPedido}`;
     if (modo === "DELIVERY") mensaje += `\nDelivery: $${costoDelivery}`;
     mensaje += `\n\nTOTAL: $${totalFinal}`;
+
+    // K-POINTS: si el cliente inició sesión, se genera un registro de puntos PENDIENTE
+    // (el administrador debe aprobarlo desde el panel para que se acrediten)
+    try {
+      if (currentUser && userData) {
+        const puntosGanados = Math.floor(totalFinal / pointsConversion);
+        const pedidoData = {
+          uid: currentUser.uid,
+          codigo: userData.codigo,
+          nombre: datos.nombre,
+          modo: modo,
+          monto: totalFinal,
+          puntos: puntosGanados,
+          fecha: Date.now(),
+          estado: "pendiente",
+          origen: "web"
+        };
+        await db.ref("pendingPoints").push(pedidoData);
+        await db.ref("orders").push(pedidoData);
+      }
+    } catch (e) {
+      console.error("No se pudo registrar el pedido para K-POINTS:", e);
+    }
+
     window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
     limpiarCarrito();
   }
@@ -879,9 +1106,458 @@
     logo.style.animation = `${efecto} 0.6s both`;
   }
 
+  /* ===================================================================
+     K-POINTS — SISTEMA DE FIDELIZACIÓN
+     Todo lo de abajo es NUEVO y se agrega encima del sistema de pedidos.
+     No modifica el carrito, el menú, ni el envío por WhatsApp.
+  =================================================================== */
+
+  const ADMIN_EMAIL = "kbros.contacto@gmail.com";
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  let currentUser = null;
+  let userData = null;
+  let isAdmin = false;
+  let guestMode = false;
+  let pointsConversion = 100; // valor por defecto: $100 CLP = 1 K-POINT (editable en Firebase > settings > pointsPerClp)
+
+  const ranksConfig = [
+    { name: "Papita Nueva",  icon: "🥔", min: 0,    desc: "Recién llegado a la familia KBROS" },
+    { name: "Completero",    icon: "🌭", min: 500,  desc: "Ya conoces el sabor KBROS" },
+    { name: "Parrillero",    icon: "🔥", min: 2000, desc: "Cliente frecuente y de confianza" },
+    { name: "KBROS Legend",  icon: "👑", min: 5000, desc: "La leyenda del completo" }
+  ];
+
+  function calcularRango(puntos) {
+    let r = ranksConfig[0];
+    for (const rc of ranksConfig) { if (puntos >= rc.min) r = rc; }
+    return r;
+  }
+
+  async function cargarSettings() {
+    try {
+      const snap = await db.ref("settings").get();
+      if (snap.exists()) {
+        const s = snap.val();
+        if (s.pointsPerClp) pointsConversion = s.pointsPerClp;
+      } else {
+        await db.ref("settings").set({ pointsPerClp: pointsConversion, nombrePrograma: "K-POINTS" });
+      }
+    } catch (e) { console.error("Error cargando settings:", e); }
+  }
+
+  function mostrarLobby() { document.getElementById("lobbyOverlay").style.display = "flex"; }
+  function ocultarLobby() { document.getElementById("lobbyOverlay").style.display = "none"; }
+  function mostrarTopbar() { document.getElementById("topbar").style.display = "flex"; }
+  function ocultarTopbar() { document.getElementById("topbar").style.display = "none"; }
+
+  document.getElementById("btnGoogleLogin").onclick = () => {
+    auth.signInWithPopup(provider).catch(e => alert("Error al iniciar sesión: " + e.message));
+  };
+  document.getElementById("btnGuest").onclick = () => {
+    guestMode = true;
+    ocultarLobby();
+    ocultarTopbar();
+  };
+
+  function toggleDropdown() {
+    document.getElementById("profileDropdown").classList.toggle("show");
+  }
+  document.addEventListener("click", (e) => {
+    const dd = document.getElementById("profileDropdown");
+    const foto = document.getElementById("topbarFoto");
+    if (dd && dd.classList.contains("show") && !dd.contains(e.target) && e.target !== foto) {
+      dd.classList.remove("show");
+    }
+  });
+
+  document.getElementById("optMiPerfil").onclick = () => { toggleDropdown(); abrirPerfil(); };
+  document.getElementById("optTransferir").onclick = () => { toggleDropdown(); abrirTransferencia(); };
+  document.getElementById("optCerrarSesion").onclick = () => { toggleDropdown(); auth.signOut(); guestMode = false; };
+
+  function generarCodigoUnico() {
+    return new Promise(async (resolve) => {
+      let code, existe = true;
+      while (existe) {
+        code = "KB" + Math.floor(10000 + Math.random() * 90000);
+        const s = await db.ref("codesIndex/" + code).get();
+        existe = s.exists();
+      }
+      resolve(code);
+    });
+  }
+
+  async function cargarOCrearUsuario(user) {
+    const ref = db.ref("users/" + user.uid);
+    const snap = await ref.get();
+    if (!snap.exists()) {
+      const code = await generarCodigoUnico();
+      const nuevo = {
+        uid: user.uid,
+        nombre: user.displayName || "",
+        correo: user.email || "",
+        foto: user.photoURL || "",
+        fechaCreacion: Date.now(),
+        codigo: code,
+        puntos: 0,
+        rango: ranksConfig[0].name,
+        pedidos: 0,
+        montoGastado: 0,
+        puntosTransferidos: 0,
+        puntosRecibidos: 0,
+        estado: "activo"
+      };
+      await ref.set(nuevo);
+      await db.ref("codesIndex/" + code).set(user.uid);
+      userData = nuevo;
+    } else {
+      userData = snap.val();
+    }
+    isAdmin = (user.email === ADMIN_EMAIL);
+    document.getElementById("adminFab").style.display = isAdmin ? "flex" : "none";
+    actualizarTopbarUI();
+    escucharPuntosRealtime();
+  }
+
+  function escucharPuntosRealtime() {
+    if (!currentUser) return;
+    db.ref("users/" + currentUser.uid + "/puntos").on("value", snap => {
+      const p = snap.val() || 0;
+      if (userData) userData.puntos = p;
+      document.getElementById("topbarPuntos").textContent = p.toLocaleString("es-CL");
+      const rango = calcularRango(p);
+      document.getElementById("topbarRango").textContent = rango.icon + " " + rango.name;
+      if (userData && userData.rango !== rango.name) {
+        userData.rango = rango.name;
+        db.ref("users/" + currentUser.uid + "/rango").set(rango.name);
+      }
+    });
+  }
+
+  function actualizarTopbarUI() {
+    document.getElementById("topbarPuntos").textContent = ((userData && userData.puntos) || 0).toLocaleString("es-CL");
+    document.getElementById("topbarFoto").src = (userData && userData.foto) || "https://api.dicebear.com/7.x/initials/svg?seed=KB";
+    const rango = calcularRango((userData && userData.puntos) || 0);
+    document.getElementById("topbarRango").textContent = rango.icon + " " + rango.name;
+  }
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      currentUser = user;
+      guestMode = false;
+      await cargarOCrearUsuario(user);
+      ocultarLobby();
+      mostrarTopbar();
+    } else {
+      currentUser = null; userData = null; isAdmin = false;
+      document.getElementById("adminFab").style.display = "none";
+      if (!guestMode) mostrarLobby();
+    }
+  });
+
+  // ---------- PERFIL ----------
+  function abrirPerfil() {
+    if (!currentUser || !userData) return;
+    const rango = calcularRango(userData.puntos || 0);
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">MI PERFIL</div>
+        <div style="text-align:center;">
+          <img src="${userData.foto}" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--accent);margin-bottom:0.8rem;">
+          <div style="font-weight:700;font-size:1.1rem;">${userData.nombre}</div>
+          <div style="color:var(--muted);font-size:0.85rem;margin-bottom:0.6rem;">${userData.correo}</div>
+          <div class="rank-badge">${rango.icon} ${rango.name}</div>
+          <div style="font-family:'Bebas Neue';font-size:2rem;color:var(--accent);">⭐ ${(userData.puntos || 0).toLocaleString("es-CL")}</div>
+          <div style="color:var(--muted);font-size:0.8rem;margin-bottom:1rem;">K-POINTS disponibles</div>
+          <div style="background:var(--surface2);border-radius:14px;padding:1rem;margin-bottom:1rem;">
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">TU CÓDIGO KBROS</div>
+            <div style="font-family:'Bebas Neue';font-size:1.6rem;letter-spacing:3px;">${userData.codigo}</div>
+          </div>
+          <div id="qrContainer" style="display:flex;justify-content:center;margin-bottom:0.5rem;"></div>
+          <div style="color:var(--muted);font-size:0.72rem;margin-bottom:1rem;">Muéstrale este código al administrador para sumar o canjear puntos</div>
+        </div>
+        <button class="modal-btn" id="btnCerrarPerfil">CERRAR</button>
+      </div>`;
+    try {
+      new QRCode(document.getElementById("qrContainer"), {
+        text: userData.codigo, width: 150, height: 150,
+        colorDark: "#0c0c0e", colorLight: "#ffffff"
+      });
+    } catch (e) { console.error("QR error:", e); }
+    document.getElementById("btnCerrarPerfil").onclick = () => document.body.removeChild(ov);
+  }
+
+  // ---------- TRANSFERENCIA ----------
+  function abrirTransferencia() {
+    if (!currentUser || !userData) return;
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">TRANSFERIR K-POINTS</div>
+        <p style="text-align:center;color:var(--muted);font-size:0.82rem;">Tienes <b style="color:var(--accent);">${(userData.puntos||0).toLocaleString("es-CL")}</b> K-POINTS disponibles</p>
+        <label class="modal-input-label">CÓDIGO KBROS DESTINATARIO</label>
+        <input class="modal-input" id="destCodigo" placeholder="KB00000" style="text-transform:uppercase">
+        <label class="modal-input-label">CANTIDAD</label>
+        <input class="modal-input" id="destCantidad" type="number" placeholder="Ej: 100">
+        <button class="modal-btn" id="btnConfirmarTransferencia" style="margin-top:1rem;">TRANSFERIR</button>
+      </div>`;
+    document.getElementById("btnConfirmarTransferencia").onclick = async () => {
+      const codigo = document.getElementById("destCodigo").value.trim().toUpperCase();
+      const cantidad = parseInt(document.getElementById("destCantidad").value);
+      if (!codigo || !cantidad || cantidad <= 0) return alert("Completa todos los campos.");
+      if (codigo === userData.codigo) return alert("No puedes transferirte a ti mismo.");
+      if (cantidad > (userData.puntos || 0)) return alert("No tienes suficientes K-POINTS.");
+      try {
+        const destUidSnap = await db.ref("codesIndex/" + codigo).get();
+        if (!destUidSnap.exists()) return alert("Código no encontrado.");
+        const destUid = destUidSnap.val();
+        await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) - cantidad);
+        await db.ref("users/" + destUid + "/puntos").transaction(p => (p || 0) + cantidad);
+        await db.ref("users/" + currentUser.uid + "/puntosTransferidos").transaction(p => (p || 0) + cantidad);
+        await db.ref("users/" + destUid + "/puntosRecibidos").transaction(p => (p || 0) + cantidad);
+        await db.ref("transfers").push({ de: userData.codigo, para: codigo, cantidad, fecha: Date.now() });
+        await db.ref("users/" + currentUser.uid + "/historial").push({ tipo: "transferencia_enviada", cantidad, para: codigo, fecha: Date.now() });
+        await db.ref("users/" + destUid + "/historial").push({ tipo: "transferencia_recibida", cantidad, de: userData.codigo, fecha: Date.now() });
+        showToast("✅ Transferencia realizada");
+        document.body.removeChild(ov);
+      } catch (e) { alert("Error al transferir: " + e.message); }
+    };
+  }
+
+  // ---------- PEDIDOS YA ----------
+  function abrirPedidosYa() {
+    if (!currentUser || !userData) {
+      alert("Debes iniciar sesión con Google para registrar tus compras de PedidosYa y ganar K-POINTS.");
+      return;
+    }
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">🛵 PEDIDOS YA</div>
+        <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-bottom:0.6rem;">Registra tu compra hecha en PedidosYa y gana K-POINTS una vez que el administrador la apruebe.</p>
+        <label class="modal-input-label">MONTO TOTAL</label>
+        <input class="modal-input" id="pyaMonto" type="number" placeholder="Ej: 12000">
+        <label class="modal-input-label">N° DE PEDIDO</label>
+        <input class="modal-input" id="pyaNumero" placeholder="Ej: 458213">
+        <label class="modal-input-label">FECHA DE COMPRA</label>
+        <input class="modal-input" id="pyaFecha" type="date">
+        <button class="modal-btn" id="btnEnviarPya" style="margin-top:1rem;">ENVIAR</button>
+      </div>`;
+    document.getElementById("btnEnviarPya").onclick = async () => {
+      const monto = parseInt(document.getElementById("pyaMonto").value);
+      const numero = document.getElementById("pyaNumero").value.trim();
+      const fecha = document.getElementById("pyaFecha").value;
+      if (!monto || !numero || !fecha) return alert("Completa todos los campos.");
+      const puntos = Math.floor(monto / pointsConversion);
+      const data = {
+        uid: currentUser.uid, codigo: userData.codigo, nombre: userData.nombre,
+        monto, numeroPedido: numero, fechaCompra: fecha, puntos,
+        fecha: Date.now(), estado: "pendiente", origen: "pedidosya"
+      };
+      try {
+        await db.ref("pendingPoints").push(data);
+        await db.ref("pedidosYa").push(data);
+        showToast("✅ Registrado, quedará pendiente de revisión");
+        document.body.removeChild(ov);
+      } catch (e) { alert("Error al registrar: " + e.message); }
+    };
+  }
+
+  // ---------- AYUDA ----------
+  function abrirAyuda() {
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">❓ ¿QUÉ SON LOS K-POINTS?</div>
+        <div style="font-size:0.88rem;line-height:1.6;max-height:55vh;overflow-y:auto;">
+          <p><b>¿Cómo se ganan?</b> Cada compra en KBROS (incluyendo el delivery) te da K-POINTS.</p>
+          <p style="margin-top:0.8rem;"><b>¿Cuándo se acreditan?</b> Tus puntos quedan "pendientes" hasta que el administrador aprueba tu pedido.</p>
+          <p style="margin-top:0.8rem;"><b>¿Cómo se transfieren?</b> Desde tu perfil puedes enviar K-POINTS a otro cliente usando su código KBROS.</p>
+          <p style="margin-top:0.8rem;"><b>¿Cómo funcionan los rangos?</b> A medida que acumulas puntos subes de rango dentro de KBROS.</p>
+          <p style="margin-top:0.8rem;"><b>Tabla de conversión</b></p>
+          <div style="background:var(--surface2);border-radius:10px;padding:0.8rem;margin-top:0.4rem;text-align:center;font-weight:700;">
+            $${pointsConversion} CLP = 1 K-POINT
+          </div>
+        </div>
+        <button class="modal-btn" id="btnCerrarAyuda" style="margin-top:1rem;">ENTENDIDO</button>
+      </div>`;
+    document.getElementById("btnCerrarAyuda").onclick = () => document.body.removeChild(ov);
+  }
+
+  // ---------- PANEL ADMIN ----------
+  function abrirAdmin() {
+    if (!isAdmin) return;
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet" style="max-height:88vh;overflow-y:auto;">
+        <div class="modal-handle"></div>
+        <div class="modal-title">👑 PANEL ADMIN</div>
+        <div id="adminStats" class="admin-stats-grid"></div>
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-tab="pendientes">Pendientes</button>
+          <button class="admin-tab-btn" data-tab="buscar">Buscar Cliente</button>
+          <button class="admin-tab-btn" data-tab="transferencias">Transferencias</button>
+        </div>
+        <div id="adminContenido"></div>
+        <button class="modal-btn" id="btnCerrarAdmin" style="margin-top:1rem;">CERRAR</button>
+      </div>`;
+    cargarEstadisticasAdmin();
+    cargarPendientesAdmin();
+    ov.querySelectorAll(".admin-tab-btn").forEach(btn => {
+      btn.onclick = () => {
+        ov.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        if (tab === "pendientes") cargarPendientesAdmin();
+        if (tab === "buscar") mostrarBuscadorAdmin();
+        if (tab === "transferencias") cargarTransferenciasAdmin();
+      };
+    });
+    document.getElementById("btnCerrarAdmin").onclick = () => document.body.removeChild(ov);
+  }
+
+  async function cargarEstadisticasAdmin() {
+    const usersSnap = await db.ref("users").get();
+    const users = usersSnap.val() || {};
+    const totalUsuarios = Object.keys(users).length;
+    const totalPuntos = Object.values(users).reduce((s, u) => s + (u.puntos || 0), 0);
+    const pendSnap = await db.ref("pendingPoints").get();
+    const pend = pendSnap.val() || {};
+    const pendientesCount = Object.values(pend).filter(p => p.estado === "pendiente").length;
+    const transfSnap = await db.ref("transfers").get();
+    const transfCount = transfSnap.exists() ? Object.keys(transfSnap.val()).length : 0;
+    const el = document.getElementById("adminStats");
+    if (!el) return;
+    el.innerHTML = `
+      <div class="stat-card"><div class="stat-num">${totalUsuarios}</div><div class="stat-label">Usuarios</div></div>
+      <div class="stat-card"><div class="stat-num">${totalPuntos.toLocaleString("es-CL")}</div><div class="stat-label">Puntos entregados</div></div>
+      <div class="stat-card"><div class="stat-num">${pendientesCount}</div><div class="stat-label">Pedidos pendientes</div></div>
+      <div class="stat-card"><div class="stat-num">${transfCount}</div><div class="stat-label">Transferencias</div></div>`;
+  }
+
+  async function cargarPendientesAdmin() {
+    const cont = document.getElementById("adminContenido");
+    if (!cont) return;
+    cont.innerHTML = '<p style="text-align:center;color:var(--muted);">Cargando...</p>';
+    const snap = await db.ref("pendingPoints").get();
+    const data = snap.val() || {};
+    const items = Object.entries(data).filter(([id, p]) => p.estado === "pendiente")
+      .sort((a, b) => b[1].fecha - a[1].fecha);
+    if (items.length === 0) {
+      cont.innerHTML = '<p style="text-align:center;color:var(--muted);padding:1rem;">No hay pedidos pendientes 🎉</p>';
+      return;
+    }
+    cont.innerHTML = items.map(([id, p]) => `
+      <div class="pending-item">
+        <div><b>${p.nombre || ""}</b> · ${p.codigo || ""}</div>
+        <div style="color:var(--muted);font-size:0.78rem;">${p.origen === "pedidosya" ? "PedidosYa · N° " + p.numeroPedido : (p.modo || "Web")} · ${new Date(p.fecha).toLocaleString("es-CL")}</div>
+        <div style="color:var(--accent);font-weight:700;">$${(p.monto || 0).toLocaleString("es-CL")} → +${p.puntos} pts</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="modal-btn" style="padding:0.5rem;font-size:0.9rem;flex:1;margin:0;" onclick="aprobarPendiente('${id}')">Aprobar ✓</button>
+          <button class="btn-limpiar" style="flex:1;" onclick="rechazarPendiente('${id}')">Rechazar ✕</button>
+        </div>
+      </div>`).join("");
+  }
+
+  async function aprobarPendiente(id) {
+    const ref = db.ref("pendingPoints/" + id);
+    const snap = await ref.get();
+    const p = snap.val();
+    if (!p) return;
+    const uidSnap = await db.ref("codesIndex/" + p.codigo).get();
+    if (!uidSnap.exists()) return alert("No se encontró el usuario.");
+    const uid = uidSnap.val();
+    await db.ref("users/" + uid + "/puntos").transaction(v => (v || 0) + p.puntos);
+    await db.ref("users/" + uid + "/pedidos").transaction(v => (v || 0) + 1);
+    await db.ref("users/" + uid + "/montoGastado").transaction(v => (v || 0) + p.monto);
+    await db.ref("users/" + uid + "/historial").push({ tipo: "puntos_aprobados", puntos: p.puntos, monto: p.monto, fecha: Date.now() });
+    await ref.update({ estado: "aprobado", fechaAprobacion: Date.now() });
+    await db.ref("transactions").push({ tipo: "aprobacion", codigo: p.codigo, puntos: p.puntos, admin: currentUser.email, fecha: Date.now() });
+    cargarPendientesAdmin(); cargarEstadisticasAdmin();
+  }
+
+  async function rechazarPendiente(id) {
+    if (!confirm("¿Rechazar este pedido?")) return;
+    await db.ref("pendingPoints/" + id).update({ estado: "rechazado", fechaRechazo: Date.now() });
+    cargarPendientesAdmin(); cargarEstadisticasAdmin();
+  }
+
+  function mostrarBuscadorAdmin() {
+    const cont = document.getElementById("adminContenido");
+    if (!cont) return;
+    cont.innerHTML = `
+      <input class="modal-input" id="buscarInput" placeholder="Nombre, correo o código KBROS" style="margin-bottom:0.8rem;">
+      <div id="resultadosBusqueda"></div>`;
+    document.getElementById("buscarInput").oninput = async (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const cont2 = document.getElementById("resultadosBusqueda");
+      if (q.length < 2) { cont2.innerHTML = ""; return; }
+      const snap = await db.ref("users").get();
+      const users = snap.val() || {};
+      const resultados = Object.entries(users).filter(([uid, u]) =>
+        (u.nombre || "").toLowerCase().includes(q) ||
+        (u.correo || "").toLowerCase().includes(q) ||
+        (u.codigo || "").toLowerCase().includes(q));
+      cont2.innerHTML = resultados.map(([uid, u]) => `
+        <div class="pending-item">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${u.foto}" style="width:36px;height:36px;border-radius:50%;">
+            <div><b>${u.nombre}</b><br><span style="color:var(--muted);font-size:0.76rem;">${u.codigo} · ⭐ ${(u.puntos || 0).toLocaleString("es-CL")}</span></div>
+          </div>
+          <div class="admin-quick-btns">
+            <button class="plus" onclick="ajustarPuntos('${u.codigo}',50)">+50</button>
+            <button class="plus" onclick="ajustarPuntos('${u.codigo}',100)">+100</button>
+            <button class="plus" onclick="ajustarPuntos('${u.codigo}',500)">+500</button>
+            <button class="minus" onclick="ajustarPuntos('${u.codigo}',-50)">-50</button>
+            <button class="minus" onclick="ajustarPuntos('${u.codigo}',-100)">-100</button>
+            <button onclick="ajustarPuntosCustom('${u.codigo}')">Otro</button>
+          </div>
+        </div>`).join("") || '<p style="color:var(--muted);text-align:center;">Sin resultados</p>';
+    };
+  }
+
+  async function ajustarPuntos(codigo, cantidad, motivo) {
+    const uidSnap = await db.ref("codesIndex/" + codigo).get();
+    if (!uidSnap.exists()) return alert("Código no encontrado.");
+    const uid = uidSnap.val();
+    await db.ref("users/" + uid + "/puntos").transaction(v => Math.max(0, (v || 0) + cantidad));
+    await db.ref("users/" + uid + "/historial").push({ tipo: cantidad > 0 ? "bonificacion" : "descuento", cantidad, motivo: motivo || "Ajuste manual admin", fecha: Date.now() });
+    await db.ref("transactions").push({ tipo: "ajuste_manual", codigo, cantidad, admin: currentUser.email, motivo: motivo || "", fecha: Date.now() });
+    showToast(cantidad > 0 ? `+${cantidad} pts a ${codigo}` : `${cantidad} pts a ${codigo}`);
+    mostrarBuscadorAdmin();
+  }
+
+  function ajustarPuntosCustom(codigo) {
+    const cantidad = parseInt(prompt("¿Cuántos K-POINTS? (usa negativo para descontar)"));
+    if (!cantidad) return;
+    const motivo = prompt("Motivo del ajuste (opcional)") || "";
+    ajustarPuntos(codigo, cantidad, motivo);
+  }
+
+  async function cargarTransferenciasAdmin() {
+    const cont = document.getElementById("adminContenido");
+    if (!cont) return;
+    const snap = await db.ref("transfers").limitToLast(30).get();
+    const data = snap.val() || {};
+    const items = Object.values(data).reverse();
+    cont.innerHTML = items.length ? items.map(t => `
+      <div class="pending-item">
+        <div>${t.de} → ${t.para}</div>
+        <div style="color:var(--accent);font-weight:700;">${t.cantidad} pts</div>
+        <div style="color:var(--muted);font-size:0.76rem;">${new Date(t.fecha).toLocaleString("es-CL")}</div>
+      </div>`).join("") : '<p style="color:var(--muted);text-align:center;">Sin transferencias aún</p>';
+  }
+
+  // ---------- INICIO ----------
   renderMenu();
   syncFirebase();
   renderTotal();
+  cargarSettings();
 </script>
 </body>
 </html>
