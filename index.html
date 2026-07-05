@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <style>
     :root {
       --bg: #0c0c0e;
@@ -637,6 +639,34 @@
     }
     .admin-quick-btns button.plus { border-color: rgba(46,204,113,0.5); color: var(--green); }
     .admin-quick-btns button.minus { border-color: rgba(255,71,87,0.5); color: var(--red); }
+
+    /* RULETA DE PREMIOS */
+    .ruleta-wrap { position: relative; width: 240px; height: 240px; margin: 1rem auto; }
+    .ruleta-pointer {
+      position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+      border-top: 24px solid var(--accent); z-index: 5;
+    }
+    .ruleta-wheel {
+      width: 100%; height: 100%; border-radius: 50%;
+      border: 6px solid var(--surface2);
+      position: relative;
+      transition: transform 4s cubic-bezier(0.17,0.67,0.12,0.99);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+    .ruleta-label { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
+    .ruleta-label span {
+      position: absolute; display: block; font-weight: 800; font-size: 1rem;
+      color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    }
+    .ruleta-centro {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--surface); border: 3px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 1px;
+      z-index: 4; text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -704,6 +734,9 @@
   <div class="menu-toggle-wrap">
     <button class="menu-toggle-btn" onclick="feedbackBoton(this); toggleMenu()">VER MENÚ 😋</button>
     <button class="menu-toggle-btn secondary-btn" onclick="abrirPedidosYa()">🛵 PEDIDOS YA</button>
+    <button class="menu-toggle-btn secondary-btn" onclick="abrirTopKBROS()">🏆 TOP KBROS</button>
+    <button class="menu-toggle-btn secondary-btn" onclick="abrirMisiones()">🎯 MISIONES</button>
+    <button class="menu-toggle-btn secondary-btn" onclick="abrirRuleta()">🎰 RULETA</button>
   </div>
 
   <div id="menu"></div>
@@ -1185,6 +1218,60 @@
     { name: "KBROS Legend",  icon: "👑", min: 5000 }
   ];
 
+  const missionsConfig = [
+    { id: "m1", nombre: "Comprador frecuente", descripcion: "Realiza 5 compras este mes", tipo: "compras", meta: 5, recompensa: 200, icono: "🛍️" },
+    { id: "m2", nombre: "Meta de puntos", descripcion: "Junta 500 K-POINTS en el mes", tipo: "puntos", meta: 500, recompensa: 150, icono: "🎯" }
+  ];
+
+  let costoRuleta = 200;
+  const premiosRuletaConfig = [
+    { nombre: "50 K-POINTS", tipo: "puntos", valor: 50, probabilidad: 30 },
+    { nombre: "100 K-POINTS", tipo: "puntos", valor: 100, probabilidad: 20 },
+    { nombre: "Bebida gratis", tipo: "texto", valor: "Bebida gratis", probabilidad: 15 },
+    { nombre: "Sigue participando", tipo: "texto", valor: "Sigue participando", probabilidad: 25 },
+    { nombre: "500 K-POINTS", tipo: "puntos", valor: 500, probabilidad: 5 },
+    { nombre: "Empanada gratis", tipo: "texto", valor: "Empanada gratis", probabilidad: 5 }
+  ];
+
+  let escanerActivo = null; // instancia del lector de QR con cámara (solo panel admin)
+
+  function mesActualClave() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+
+  function nombreMesLargo(clave) {
+    const [y, m] = clave.split("-");
+    const nombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    return nombres[parseInt(m) - 1] + " " + y;
+  }
+
+  function nombreMesCorto(clave) {
+    const [y, m] = clave.split("-");
+    const abrev = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    return abrev[parseInt(m) - 1] + " " + y.slice(2);
+  }
+
+  // K-POINTS: cada vez que un cliente gana o pierde puntos (compra aprobada o ajuste manual),
+  // se refleja también en el ranking del mes actual (para el Top KBROS y las Misiones).
+  async function registrarRankingMensual(uid, deltaPuntos, esCompra) {
+    try {
+      const mes = mesActualClave();
+      const uSnap = await db.ref("users/" + uid).get();
+      const u = uSnap.val() || {};
+      const ref = db.ref("rankingMensual/" + mes + "/" + uid);
+      const snap = await ref.get();
+      const actual = snap.val() || { puntos: 0, compras: 0 };
+      await ref.set({
+        nombre: u.nombre || "",
+        foto: u.foto || "",
+        codigo: u.codigo || "",
+        puntos: (actual.puntos || 0) + deltaPuntos,
+        compras: (actual.compras || 0) + (esCompra ? 1 : 0)
+      });
+    } catch (e) { console.error("Error registrando ranking mensual:", e); }
+  }
+
   function calcularRango(puntos) {
     let r = ranksConfig[0];
     for (const rc of ranksConfig) { if (puntos >= rc.min) r = rc; }
@@ -1203,6 +1290,43 @@
       }
     } catch (e) { console.error("Error cargando settings:", e); }
     await cargarRangosConfig();
+    await cargarMisionesConfig();
+    await cargarRuletaConfig();
+  }
+
+  // K-POINTS: carga el costo y los premios de la ruleta desde Firebase
+  async function cargarRuletaConfig() {
+    try {
+      const snap = await db.ref("settings/ruleta").get();
+      if (snap.exists()) {
+        const data = snap.val();
+        if (typeof data.costo === "number") costoRuleta = data.costo;
+        const arr = data.premios ? (Array.isArray(data.premios) ? data.premios : Object.values(data.premios)) : [];
+        if (arr.length) {
+          premiosRuletaConfig.length = 0;
+          arr.forEach(p => premiosRuletaConfig.push(p));
+        }
+      } else {
+        await db.ref("settings/ruleta").set({ costo: costoRuleta, premios: premiosRuletaConfig });
+      }
+    } catch (e) { console.error("Error cargando la ruleta:", e); }
+  }
+
+  // K-POINTS: carga las misiones guardadas en Firebase (si el admin las editó desde Config)
+  async function cargarMisionesConfig() {
+    try {
+      const snap = await db.ref("settings/missions").get();
+      if (snap.exists()) {
+        const data = snap.val();
+        const arr = (Array.isArray(data) ? data : Object.values(data)).filter(Boolean);
+        if (arr.length) {
+          missionsConfig.length = 0;
+          arr.forEach(m => missionsConfig.push(m));
+        }
+      } else {
+        await db.ref("settings/missions").set(missionsConfig);
+      }
+    } catch (e) { console.error("Error cargando misiones:", e); }
   }
 
   // K-POINTS: carga los rangos guardados en Firebase (si el admin los editó desde Config);
@@ -1587,6 +1711,239 @@
     document.getElementById("btnCerrarAyuda").onclick = () => document.body.removeChild(ov);
   }
 
+  // ---------- TOP KBROS (ranking mensual, visible para todos) ----------
+  async function abrirTopKBROS() {
+    const mesActual = mesActualClave();
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;">
+        <div class="modal-handle"></div>
+        <div class="modal-title">🏆 TOP KBROS</div>
+        <select class="modal-input" id="selectMesTop" style="margin-bottom:1rem;"></select>
+        <div id="topKbrosContenido"><p style="text-align:center;color:var(--muted);">Cargando...</p></div>
+        <button class="modal-btn" id="btnCerrarTop" style="margin-top:1rem;">CERRAR</button>
+      </div>`;
+    agregarBotonCerrar(ov);
+    document.getElementById("btnCerrarTop").onclick = () => document.body.removeChild(ov);
+    try {
+      const snap = await db.ref("rankingMensual").get();
+      const data = snap.val() || {};
+      const meses = Object.keys(data).sort().reverse();
+      if (!meses.includes(mesActual)) meses.unshift(mesActual);
+      const select = document.getElementById("selectMesTop");
+      select.innerHTML = meses.map(m => `<option value="${m}" ${m === mesActual ? "selected" : ""}>${nombreMesLargo(m)}</option>`).join("");
+      const pintarMes = (mes) => {
+        const cont = document.getElementById("topKbrosContenido");
+        const registros = Object.values(data[mes] || {}).sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+        if (registros.length === 0) { cont.innerHTML = '<p style="text-align:center;color:var(--muted);padding:1rem;">Todavía no hay actividad ese mes.</p>'; return; }
+        const medallas = ["🥇", "🥈", "🥉"];
+        cont.innerHTML = registros.map((r, i) => `
+          <div class="pending-item" style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:1.2rem;width:30px;text-align:center;">${medallas[i] || (i + 1)}</div>
+            <img src="${r.foto}" style="width:34px;height:34px;border-radius:50%;">
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:0.88rem;">${r.nombre}</div>
+              <div style="color:var(--muted);font-size:0.72rem;">${r.codigo} · ${r.compras || 0} compra${r.compras === 1 ? "" : "s"}</div>
+            </div>
+            <div style="color:var(--accent);font-weight:700;">${(r.puntos || 0).toLocaleString("es-CL")} pts</div>
+          </div>`).join("");
+      };
+      pintarMes(mesActual);
+      select.onchange = () => pintarMes(select.value);
+    } catch (e) {
+      document.getElementById("topKbrosContenido").innerHTML = `<p style="color:var(--red);text-align:center;padding:1rem;">❌ ${e.message}</p>`;
+    }
+  }
+
+  // ---------- MISIONES DEL MES ----------
+  async function abrirMisiones() {
+    if (!currentUser || !userData) {
+      alert("Debes iniciar sesión con Google para ver y completar misiones.");
+      return;
+    }
+    const mes = mesActualClave();
+    let progresoActual = { compras: 0, puntos: 0 };
+    let reclamadas = {};
+    try {
+      const snap = await db.ref("rankingMensual/" + mes + "/" + currentUser.uid).get();
+      if (snap.exists()) progresoActual = snap.val();
+      const snap2 = await db.ref("users/" + currentUser.uid + "/misionesReclamadas/" + mes).get();
+      if (snap2.exists()) reclamadas = snap2.val();
+    } catch (e) { console.error("Error cargando progreso de misiones:", e); }
+
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;">
+        <div class="modal-handle"></div>
+        <div class="modal-title">🎯 MISIONES DEL MES</div>
+        <div id="listaMisiones"></div>
+        <button class="modal-btn" id="btnCerrarMisiones" style="margin-top:1rem;">CERRAR</button>
+      </div>`;
+    agregarBotonCerrar(ov);
+    document.getElementById("btnCerrarMisiones").onclick = () => document.body.removeChild(ov);
+
+    const lista = document.getElementById("listaMisiones");
+    if (missionsConfig.length === 0) {
+      lista.innerHTML = '<p style="text-align:center;color:var(--muted);padding:1rem;">No hay misiones activas por ahora.</p>';
+      return;
+    }
+    lista.innerHTML = missionsConfig.map(m => {
+      const progreso = m.tipo === "compras" ? (progresoActual.compras || 0) : (progresoActual.puntos || 0);
+      const pct = Math.max(0, Math.min(100, Math.round((progreso / m.meta) * 100)));
+      const completada = progreso >= m.meta;
+      const reclamada = !!reclamadas[m.id];
+      return `
+        <div class="pending-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-weight:700;">${m.icono} ${m.nombre}</div>
+            <div style="color:var(--accent);font-size:0.8rem;font-weight:700;">+${m.recompensa} pts</div>
+          </div>
+          <div style="color:var(--muted);font-size:0.76rem;margin-bottom:6px;">${m.descripcion}</div>
+          <div style="background:var(--surface3);border-radius:99px;height:8px;overflow:hidden;margin-bottom:6px;">
+            <div style="background:linear-gradient(90deg,var(--accent),var(--accent2));height:100%;width:${pct}%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.72rem;color:var(--muted);">${progreso}/${m.meta}</span>
+            ${reclamada
+              ? '<span style="font-size:0.76rem;color:var(--green);">✓ Reclamada</span>'
+              : completada
+                ? `<button class="modal-btn" style="padding:0.5rem 1rem;font-size:0.82rem;margin:0;" data-mision="${m.id}">RECLAMAR 🎁</button>`
+                : '<span style="font-size:0.72rem;color:var(--muted);">En progreso</span>'}
+          </div>
+        </div>`;
+    }).join("");
+
+    lista.querySelectorAll("button[data-mision]").forEach(btn => {
+      btn.onclick = async () => {
+        const missionId = btn.dataset.mision;
+        const mision = missionsConfig.find(mm => mm.id === missionId);
+        if (!mision) return;
+        try {
+          const chequeo = await db.ref(`users/${currentUser.uid}/misionesReclamadas/${mes}/${missionId}`).get();
+          if (chequeo.exists() && chequeo.val()) return alert("Ya reclamaste esta misión este mes.");
+          await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) + mision.recompensa);
+          await db.ref(`users/${currentUser.uid}/misionesReclamadas/${mes}`).update({ [missionId]: true });
+          await db.ref("users/" + currentUser.uid + "/historial").push({ tipo: "mision_completada", mision: mision.nombre, puntos: mision.recompensa, fecha: Date.now() });
+          showToast("🎉 ¡Misión completada! +" + mision.recompensa + " pts");
+          document.body.removeChild(ov);
+          abrirMisiones();
+        } catch (e) { alert("Error al reclamar: " + e.message); }
+      };
+    });
+  }
+
+  // ---------- RULETA DE PREMIOS ----------
+
+  // Arma los segmentos de la rueda a partir de los premios configurados (por peso/probabilidad)
+  function construirSegmentosRuleta(premios) {
+    const totalPeso = premios.reduce((s, p) => s + (p.probabilidad || 1), 0) || 1;
+    const colores = ["#ff6b2b", "#ff9f1c", "#2ecc71", "#3498db", "#9b59b6", "#ff4757", "#f1c40f", "#1abc9c"];
+    let acumulado = 0;
+    return premios.map((p, i) => {
+      const share = ((p.probabilidad || 1) / totalPeso) * 360;
+      const seg = Object.assign({}, p, {
+        start: acumulado, end: acumulado + share, mid: acumulado + share / 2,
+        color: colores[i % colores.length], numero: i + 1
+      });
+      acumulado += share;
+      return seg;
+    });
+  }
+
+  // Sorteo ponderado: cada premio tiene más o menos chances según su "probabilidad"
+  function elegirPremioPonderado(segmentos) {
+    const totalPeso = segmentos.reduce((s, p) => s + (p.probabilidad || 1), 0);
+    let r = Math.random() * totalPeso;
+    for (const s of segmentos) {
+      if (r < (s.probabilidad || 1)) return s;
+      r -= (s.probabilidad || 1);
+    }
+    return segmentos[segmentos.length - 1];
+  }
+
+  async function abrirRuleta() {
+    if (!currentUser || !userData) {
+      alert("Debes iniciar sesión con Google para girar la ruleta.");
+      return;
+    }
+    if (premiosRuletaConfig.length === 0) {
+      alert("La ruleta todavía no tiene premios configurados.");
+      return;
+    }
+    const segmentos = construirSegmentosRuleta(premiosRuletaConfig);
+    const gradiente = segmentos.map(s => `${s.color} ${s.start}deg ${s.end}deg`).join(", ");
+    const labelsHTML = segmentos.map(s => {
+      const rad = s.mid * Math.PI / 180;
+      const x = Math.round(78 * Math.sin(rad));
+      const y = Math.round(-78 * Math.cos(rad));
+      return `<span style="left:${x}px; top:${y}px; transform:translate(-50%,-50%);">${s.numero}</span>`;
+    }).join("");
+    const legendHTML = segmentos.map(s => `
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.74rem;color:var(--muted);margin-bottom:3px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+        ${s.numero}. ${s.nombre}
+      </div>`).join("");
+
+    const ov = crearOverlay();
+    ov.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">🎰 RULETA KBROS</div>
+        <p style="text-align:center;color:var(--muted);font-size:0.82rem;margin-bottom:0.4rem;">Costo por giro: <b style="color:var(--accent);">${isAdmin ? "0 (admin)" : costoRuleta + " K-POINTS"}</b></p>
+        <div class="ruleta-wrap">
+          <div class="ruleta-pointer"></div>
+          <div class="ruleta-wheel" id="ruletaWheel" style="background:conic-gradient(from 0deg, ${gradiente});">
+            <div class="ruleta-label">${labelsHTML}</div>
+          </div>
+          <div class="ruleta-centro">GIRAR</div>
+        </div>
+        <div style="margin:0.8rem 0;">${legendHTML}</div>
+        <button class="modal-btn" id="btnGirarRuleta">🎰 GIRAR${isAdmin ? "" : " (" + costoRuleta + " pts)"}</button>
+      </div>`;
+    agregarBotonCerrar(ov);
+
+    let rotacionActual = 0;
+    let girando = false;
+    document.getElementById("btnGirarRuleta").onclick = async () => {
+      if (girando) return;
+      if (!isAdmin && (userData.puntos || 0) < costoRuleta) return alert("No tienes suficientes K-POINTS para girar.");
+      girando = true;
+      const boton = document.getElementById("btnGirarRuleta");
+      boton.disabled = true;
+      boton.style.opacity = "0.6";
+      try {
+        if (!isAdmin) {
+          await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) - costoRuleta);
+        }
+        const premioElegido = elegirPremioPonderado(segmentos);
+        const vueltas = 5;
+        const objetivo = (360 - premioElegido.mid + 360) % 360;
+        const delta = ((objetivo - (rotacionActual % 360)) + 360) % 360;
+        rotacionActual += delta + 360 * vueltas;
+        document.getElementById("ruletaWheel").style.transform = `rotate(${rotacionActual}deg)`;
+        setTimeout(async () => {
+          try {
+            if (premioElegido.tipo === "puntos") {
+              await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) + Number(premioElegido.valor || 0));
+            }
+            await db.ref("users/" + currentUser.uid + "/historial").push({ tipo: "ruleta", premio: premioElegido.nombre, fecha: Date.now() });
+            await db.ref("ruletaHistorial").push({ codigo: userData.codigo, nombre: userData.nombre, premio: premioElegido.nombre, fecha: Date.now() });
+            const extra = premioElegido.tipo === "texto" ? "\n\nMuéstrale esto al administrador para reclamarlo." : "";
+            alert("🎉 ¡Te ganaste: " + premioElegido.nombre + "!" + extra);
+          } catch (e) { console.error("Error al procesar el premio:", e); }
+          girando = false;
+          boton.disabled = false;
+          boton.style.opacity = "1";
+        }, 4300);
+      } catch (e) {
+        alert("Error al girar: " + e.message);
+        girando = false;
+        boton.disabled = false;
+        boton.style.opacity = "1";
+      }
+    };
+  }
+
   // ---------- PANEL ADMIN ----------
   function abrirAdmin() {
     if (!isAdmin) return;
@@ -1599,13 +1956,15 @@
         <div class="admin-tabs">
           <button class="admin-tab-btn active" data-tab="pendientes">Pendientes</button>
           <button class="admin-tab-btn" data-tab="buscar">Buscar Cliente</button>
+          <button class="admin-tab-btn" data-tab="escanear">Escanear QR</button>
           <button class="admin-tab-btn" data-tab="transferencias">Transferencias</button>
+          <button class="admin-tab-btn" data-tab="dashboard">Dashboard</button>
           <button class="admin-tab-btn" data-tab="config">Config</button>
         </div>
         <div id="adminContenido"></div>
         <button class="modal-btn" id="btnCerrarAdmin" style="margin-top:1rem;">CERRAR</button>
       </div>`;
-    agregarBotonCerrar(ov);
+    agregarBotonCerrar(ov, () => detenerEscaneoAdmin());
     cargarEstadisticasAdmin();
     cargarPendientesAdmin();
     ov.querySelectorAll(".admin-tab-btn").forEach(btn => {
@@ -1613,13 +1972,53 @@
         ov.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         const tab = btn.dataset.tab;
+        if (tab !== "escanear") detenerEscaneoAdmin();
         if (tab === "pendientes") cargarPendientesAdmin();
         if (tab === "buscar") mostrarBuscadorAdmin();
+        if (tab === "escanear") iniciarEscaneoAdmin();
         if (tab === "transferencias") cargarTransferenciasAdmin();
+        if (tab === "dashboard") mostrarDashboardAdmin();
         if (tab === "config") mostrarConfigAdmin();
       };
     });
-    document.getElementById("btnCerrarAdmin").onclick = () => document.body.removeChild(ov);
+    document.getElementById("btnCerrarAdmin").onclick = () => { detenerEscaneoAdmin(); document.body.removeChild(ov); };
+  }
+
+  // K-POINTS: escaneo de QR con la cámara — SOLO disponible dentro del Panel Admin
+  function iniciarEscaneoAdmin() {
+    const cont = document.getElementById("adminContenido");
+    if (!cont) return;
+    cont.innerHTML = `
+      <div id="lectorQR" style="width:100%;border-radius:14px;overflow:hidden;background:#000;"></div>
+      <p style="text-align:center;color:var(--muted);font-size:0.78rem;margin-top:0.7rem;">Apunta la cámara al código QR del perfil del cliente</p>
+      <button type="button" class="modal-btn" id="btnDetenerEscaneo" style="margin-top:0.8rem;background:var(--surface2);color:var(--text);box-shadow:none;">DETENER CÁMARA</button>`;
+    document.getElementById("btnDetenerEscaneo").onclick = () => detenerEscaneoAdmin();
+    if (escanerActivo) { try { escanerActivo.stop(); } catch (e) {} escanerActivo = null; }
+    try {
+      escanerActivo = new Html5Qrcode("lectorQR");
+      escanerActivo.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 220 },
+        (textoDecodificado) => {
+          const codigo = (textoDecodificado || "").trim().toUpperCase();
+          detenerEscaneoAdmin();
+          abrirFichaClienteAdmin(codigo);
+        },
+        () => { /* frames sin QR detectado: se ignoran, es normal mientras se apunta la cámara */ }
+      ).catch(err => {
+        cont.innerHTML = `<p style="color:var(--red);text-align:center;padding:1rem;font-size:0.85rem;">❌ No se pudo acceder a la cámara.<br><span style="color:var(--muted);font-size:0.75rem;">${err}<br>Revisa que le hayas dado permiso de cámara al navegador y que estés usando el sitio con https://.</span></p>`;
+      });
+    } catch (e) {
+      cont.innerHTML = `<p style="color:var(--red);text-align:center;padding:1rem;">❌ ${e.message}</p>`;
+    }
+  }
+
+  function detenerEscaneoAdmin() {
+    if (escanerActivo) {
+      const instancia = escanerActivo;
+      escanerActivo = null;
+      instancia.stop().then(() => instancia.clear()).catch(() => {});
+    }
   }
 
   async function cargarEstadisticasAdmin() {
@@ -1682,6 +2081,7 @@
     await db.ref("users/" + uid + "/montoGastado").transaction(v => (v || 0) + p.monto);
     await db.ref("users/" + uid + "/historial").push({ tipo: "puntos_aprobados", puntos: p.puntos, monto: p.monto, fecha: Date.now() });
     await actualizarRachaSemanal(uid);
+    await registrarRankingMensual(uid, p.puntos, true);
     await ref.update({ estado: "aprobado", fechaAprobacion: Date.now() });
     await db.ref("transactions").push({ tipo: "aprobacion", codigo: p.codigo, puntos: p.puntos, admin: currentUser.email, fecha: Date.now() });
     cargarPendientesAdmin(); cargarEstadisticasAdmin();
@@ -1844,6 +2244,7 @@
     await db.ref("users/" + uid + "/puntos").transaction(v => Math.max(0, (v || 0) + cantidad));
     await db.ref("users/" + uid + "/historial").push({ tipo: cantidad > 0 ? "bonificacion" : "descuento", cantidad, motivo: motivo || "Ajuste manual admin", fecha: Date.now() });
     await db.ref("transactions").push({ tipo: "ajuste_manual", codigo, cantidad, admin: currentUser.email, motivo: motivo || "", fecha: Date.now() });
+    await registrarRankingMensual(uid, cantidad, false);
     showToast(cantidad > 0 ? `+${cantidad} pts a ${codigo}` : `${cantidad} pts a ${codigo}`);
     ejecutarBusquedaAdminClientes();
   }
@@ -1869,6 +2270,58 @@
       </div>`).join("") : '<p style="color:var(--muted);text-align:center;">Sin transferencias aún</p>';
   }
 
+  // K-POINTS: Dashboard con gráficos — puntos entregados por mes y clientes por rango
+  let chartPuntosMesInstancia = null;
+  let chartRangosInstancia = null;
+  async function mostrarDashboardAdmin() {
+    const cont = document.getElementById("adminContenido");
+    if (!cont) return;
+    cont.innerHTML = `
+      <div style="margin-bottom:1.4rem;">
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;">K-POINTS ENTREGADOS POR MES</div>
+        <canvas id="chartPuntosMes" height="180"></canvas>
+      </div>
+      <div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;">CLIENTES POR RANGO</div>
+        <canvas id="chartRangos" height="200"></canvas>
+      </div>`;
+    if (chartPuntosMesInstancia) { chartPuntosMesInstancia.destroy(); chartPuntosMesInstancia = null; }
+    if (chartRangosInstancia) { chartRangosInstancia.destroy(); chartRangosInstancia = null; }
+    try {
+      const snap = await db.ref("rankingMensual").get();
+      const data = snap.val() || {};
+      const meses = Object.keys(data).sort().slice(-6);
+      const totales = meses.map(m => Object.values(data[m]).reduce((s, r) => s + (r.puntos || 0), 0));
+      chartPuntosMesInstancia = new Chart(document.getElementById("chartPuntosMes"), {
+        type: "bar",
+        data: { labels: meses.map(nombreMesCorto), datasets: [{ label: "K-POINTS", data: totales, backgroundColor: "#ff6b2b", borderRadius: 6 }] },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { ticks: { color: "#888892" }, grid: { color: "rgba(255,255,255,0.06)" } }, x: { ticks: { color: "#888892" }, grid: { display: false } } }
+        }
+      });
+    } catch (e) {
+      document.getElementById("chartPuntosMes").outerHTML = `<p style="color:var(--red);font-size:0.8rem;">❌ ${e.message}</p>`;
+    }
+    try {
+      const snapUsers = await db.ref("users").get();
+      const users = Object.values(snapUsers.val() || {});
+      const conteo = ranksConfig.map(r => ({ nombre: r.name, cantidad: 0 }));
+      users.forEach(u => {
+        const r = calcularRango(u.puntos || 0);
+        const idx = conteo.findIndex(c => c.nombre === r.name);
+        if (idx >= 0) conteo[idx].cantidad++;
+      });
+      chartRangosInstancia = new Chart(document.getElementById("chartRangos"), {
+        type: "doughnut",
+        data: { labels: conteo.map(c => c.nombre), datasets: [{ data: conteo.map(c => c.cantidad), backgroundColor: ["#888892", "#ffb020", "#ff6b2b", "#ffd700", "#2ecc71", "#ff4757", "#9b59b6"] }] },
+        options: { plugins: { legend: { position: "bottom", labels: { color: "#f0f0f2", font: { size: 10 } } } } }
+      });
+    } catch (e) {
+      document.getElementById("chartRangos").outerHTML = `<p style="color:var(--red);font-size:0.8rem;">❌ ${e.message}</p>`;
+    }
+  }
+
   // K-POINTS: Panel de Configuración — permite editar la conversión, el bono de
   // cumpleaños y los rangos, todo sin tocar código.
   function mostrarConfigAdmin() {
@@ -1882,25 +2335,136 @@
       <div style="font-size:0.8rem;color:var(--muted);margin:1.2rem 0 0.5rem;">RANGOS (de menor a mayor)</div>
       <div id="cfgRangos"></div>
       <button type="button" class="modal-btn" id="btnAgregarRango" style="margin-top:0.6rem;background:var(--surface2);color:var(--text);box-shadow:none;">+ AGREGAR RANGO</button>
+      <div style="font-size:0.8rem;color:var(--muted);margin:1.4rem 0 0.5rem;">MISIONES DEL MES</div>
+      <div id="cfgMisiones"></div>
+      <button type="button" class="modal-btn" id="btnAgregarMision" style="margin-top:0.6rem;background:var(--surface2);color:var(--text);box-shadow:none;">+ AGREGAR MISIÓN</button>
+      <div style="font-size:0.8rem;color:var(--muted);margin:1.4rem 0 0.5rem;">RULETA DE PREMIOS</div>
+      <label class="modal-input-label">COSTO POR GIRO (K-POINTS)</label>
+      <input class="modal-input" id="cfgCostoRuleta" type="number" value="${costoRuleta}">
+      <div id="cfgRuletaPremios" style="margin-top:0.6rem;"></div>
+      <button type="button" class="modal-btn" id="btnAgregarPremioRuleta" style="margin-top:0.6rem;background:var(--surface2);color:var(--text);box-shadow:none;">+ AGREGAR PREMIO</button>
       <button class="modal-btn" id="btnGuardarConfig" style="margin-top:1.2rem;">GUARDAR CAMBIOS</button>
-      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.6rem;">Ícono: cualquier emoji · Nombre: texto libre · Mínimo: K-POINTS necesarios para llegar a ese rango</p>`;
+      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.6rem;">Ícono: cualquier emoji · Nombre: texto libre · Mínimo: K-POINTS necesarios para llegar a ese rango · Peso: entre más alto, más chances de salir en la ruleta</p>`;
     pintarFilasRangos(ranksConfig);
+    pintarFilasMisiones(missionsConfig);
+    pintarFilasRuleta(premiosRuletaConfig);
     document.getElementById("btnAgregarRango").onclick = () => agregarFilaRango({ icon: "⭐", name: "Nuevo rango", min: 0 });
+    document.getElementById("btnAgregarMision").onclick = () => agregarFilaMision({ icono: "⭐", nombre: "Nueva misión", descripcion: "", tipo: "compras", meta: 1, recompensa: 100 });
+    document.getElementById("btnAgregarPremioRuleta").onclick = () => agregarFilaPremioRuleta({ nombre: "Nuevo premio", tipo: "puntos", valor: 50, probabilidad: 10 });
     document.getElementById("btnGuardarConfig").onclick = async () => {
       const nuevaConversion = parseInt(document.getElementById("cfgConversion").value) || pointsConversion;
       const nuevoCumple = parseInt(document.getElementById("cfgCumple").value);
+      const nuevoCostoRuleta = parseInt(document.getElementById("cfgCostoRuleta").value) || costoRuleta;
       const rangosFinal = leerRangosDesdeFilas();
+      const misionesFinal = leerMisionesDesdeFilas();
+      const premiosRuletaFinal = leerPremiosRuletaDesdeFilas();
       if (rangosFinal.length === 0) return alert("Debe quedar al menos un rango.");
+      if (premiosRuletaFinal.length === 0) return alert("La ruleta debe tener al menos un premio.");
       try {
         await db.ref("settings").update({ pointsPerClp: nuevaConversion, bonoCumpleanos: isNaN(nuevoCumple) ? birthdayBonus : nuevoCumple });
         await db.ref("settings/ranks").set(rangosFinal);
+        await db.ref("settings/missions").set(misionesFinal);
+        await db.ref("settings/ruleta").set({ costo: nuevoCostoRuleta, premios: premiosRuletaFinal });
         pointsConversion = nuevaConversion;
         birthdayBonus = isNaN(nuevoCumple) ? birthdayBonus : nuevoCumple;
+        costoRuleta = nuevoCostoRuleta;
         ranksConfig.length = 0;
         rangosFinal.forEach(r => ranksConfig.push(r));
+        missionsConfig.length = 0;
+        misionesFinal.forEach(m => missionsConfig.push(m));
+        premiosRuletaConfig.length = 0;
+        premiosRuletaFinal.forEach(p => premiosRuletaConfig.push(p));
         showToast("✅ Configuración guardada");
       } catch (e) { alert("Error al guardar: " + e.message); }
     };
+  }
+
+  function pintarFilasRuleta(lista) {
+    const cont = document.getElementById("cfgRuletaPremios");
+    cont.innerHTML = "";
+    lista.forEach(p => agregarFilaPremioRuleta(p));
+  }
+
+  function agregarFilaPremioRuleta(p) {
+    const cont = document.getElementById("cfgRuletaPremios");
+    const div = document.createElement("div");
+    div.className = "premio-ruleta-row";
+    div.style = "background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:0.7rem;margin-bottom:0.6rem;";
+    div.innerHTML = `
+      <input class="modal-input premio-nombre" value="${p.nombre || ""}" placeholder="Nombre del premio" style="margin-bottom:6px;padding:0.5rem;">
+      <div style="display:flex;gap:6px;">
+        <select class="modal-input premio-tipo" style="flex:1;padding:0.5rem;">
+          <option value="puntos" ${p.tipo === "puntos" ? "selected" : ""}>K-POINTS</option>
+          <option value="texto" ${p.tipo === "texto" ? "selected" : ""}>Premio físico / texto</option>
+        </select>
+        <input class="modal-input premio-valor" value="${p.valor !== undefined ? p.valor : 0}" placeholder="Valor" style="width:85px;padding:0.5rem;">
+        <input class="modal-input premio-prob" type="number" value="${p.probabilidad || 10}" placeholder="Peso" style="width:65px;padding:0.5rem;">
+        <button type="button" class="btn-limpiar" style="padding:0.4rem 0.6rem;" onclick="this.closest('.premio-ruleta-row').remove()">✕</button>
+      </div>`;
+    cont.appendChild(div);
+  }
+
+  function leerPremiosRuletaDesdeFilas() {
+    const filas = document.querySelectorAll("#cfgRuletaPremios .premio-ruleta-row");
+    const arr = [];
+    filas.forEach(f => {
+      const tipo = f.querySelector(".premio-tipo").value;
+      const valorRaw = f.querySelector(".premio-valor").value.trim();
+      arr.push({
+        nombre: f.querySelector(".premio-nombre").value.trim() || "Premio",
+        tipo,
+        valor: tipo === "puntos" ? (parseInt(valorRaw) || 0) : valorRaw,
+        probabilidad: parseFloat(f.querySelector(".premio-prob").value) || 1
+      });
+    });
+    return arr;
+  }
+
+  function pintarFilasMisiones(lista) {
+    const cont = document.getElementById("cfgMisiones");
+    cont.innerHTML = "";
+    lista.forEach(m => agregarFilaMision(m));
+  }
+
+  function agregarFilaMision(m) {
+    const cont = document.getElementById("cfgMisiones");
+    const div = document.createElement("div");
+    div.className = "mision-row";
+    div.dataset.id = m.id || ("m" + Date.now() + Math.floor(Math.random() * 1000));
+    div.style = "background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:0.7rem;margin-bottom:0.6rem;";
+    div.innerHTML = `
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input class="modal-input mision-icono" value="${m.icono || "⭐"}" style="width:48px;text-align:center;padding:0.5rem 0.3rem;">
+        <input class="modal-input mision-nombre" value="${m.nombre || ""}" placeholder="Nombre de la misión" style="flex:1;padding:0.5rem;">
+        <button type="button" class="btn-limpiar" style="padding:0.4rem 0.6rem;" onclick="this.closest('.mision-row').remove()">✕</button>
+      </div>
+      <input class="modal-input mision-desc" value="${m.descripcion || ""}" placeholder="Descripción" style="margin-bottom:6px;padding:0.5rem;">
+      <div style="display:flex;gap:6px;">
+        <select class="modal-input mision-tipo" style="flex:1;padding:0.5rem;">
+          <option value="compras" ${m.tipo === "compras" ? "selected" : ""}>N° de compras del mes</option>
+          <option value="puntos" ${m.tipo === "puntos" ? "selected" : ""}>K-POINTS ganados en el mes</option>
+        </select>
+        <input class="modal-input mision-meta" type="number" value="${m.meta || 1}" placeholder="Meta" style="width:75px;padding:0.5rem;">
+        <input class="modal-input mision-recompensa" type="number" value="${m.recompensa || 100}" placeholder="Premio" style="width:85px;padding:0.5rem;">
+      </div>`;
+    cont.appendChild(div);
+  }
+
+  function leerMisionesDesdeFilas() {
+    const filas = document.querySelectorAll("#cfgMisiones .mision-row");
+    const arr = [];
+    filas.forEach(f => {
+      arr.push({
+        id: f.dataset.id,
+        icono: f.querySelector(".mision-icono").value.trim() || "⭐",
+        nombre: f.querySelector(".mision-nombre").value.trim() || "Misión",
+        descripcion: f.querySelector(".mision-desc").value.trim() || "",
+        tipo: f.querySelector(".mision-tipo").value,
+        meta: parseInt(f.querySelector(".mision-meta").value) || 1,
+        recompensa: parseInt(f.querySelector(".mision-recompensa").value) || 0
+      });
+    });
+    return arr;
   }
 
   function pintarFilasRangos(lista) {
