@@ -487,6 +487,25 @@
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     .logo-anim { animation-duration: 0.6s; animation-fill-mode: both; }
 
+    /* BOTÓN CERRAR (X) para todos los sub-menús / modales */
+    .modal-close-x {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .modal-close-x:hover { background: var(--surface3); border-color: var(--accent); }
+    .modal-close-x:active { transform: scale(0.92); }
+
     /* ======================= K-POINTS: LOBBY ======================= */
     .lobby-overlay {
       position: fixed; inset: 0;
@@ -815,6 +834,23 @@
     return ov;
   }
 
+  // K-POINTS: agrega un botón "X" al modal actual. onCerrar (opcional) se ejecuta
+  // ANTES de quitar el modal (útil para resolver/rechazar promesas pendientes).
+  function agregarBotonCerrar(ov, onCerrar) {
+    const sheet = ov.querySelector(".modal-sheet");
+    if (!sheet) return;
+    sheet.style.position = "relative";
+    const btn = document.createElement("button");
+    btn.className = "modal-close-x";
+    btn.innerHTML = "✕";
+    btn.type = "button";
+    btn.onclick = () => {
+      if (onCerrar) onCerrar();
+      if (ov.parentNode) document.body.removeChild(ov);
+    };
+    sheet.appendChild(btn);
+  }
+
   function elegirModoEntrega() {
     return new Promise(resolve => {
       const ov = crearOverlay();
@@ -840,6 +876,7 @@
           </div>
           <button class="modal-btn" id="btnConfirmarModo">CONFIRMAR</button>
         </div>`;
+      agregarBotonCerrar(ov, () => resolve(null));
 
       let selected = null;
       window.seleccionarOpt = (opt) => {
@@ -868,13 +905,20 @@
           <input class="modal-input" id="telefonoInput" type="tel" placeholder="9 1234 5678" maxlength="9"/>
           <button class="modal-btn" style="margin-top:1.2rem" id="btnConfirmarDatos">LISTO ✓</button>
         </div>`;
+      agregarBotonCerrar(ov, () => resolve(null));
       document.getElementById("btnConfirmarDatos").onclick = () => {
         const nombre = document.getElementById("nombreInput").value.trim();
         const telefono = document.getElementById("telefonoInput").value.trim();
         if (!nombre) return alert("Ingresa tu nombre.");
         if (!/^\d{9}$/.test(telefono)) return alert("Número inválido. 9 dígitos sin +56.");
+        // SAFARI/iPhone: hay que abrir la pestaña de WhatsApp AQUÍ MISMO, en el instante
+        // del clic. Si se abre más adelante (después de guardar en Firebase, etc.) Safari
+        // ya no lo considera una acción directa del usuario y la bloquea en silencio.
+        // Por eso abrimos una pestaña en blanco ahora, y más abajo (en enviarPedido)
+        // solo la "completamos" con el link real de WhatsApp.
+        const ventanaWhatsApp = window.open("", "_blank");
         document.body.removeChild(ov);
-        resolve({ nombre, telefono });
+        resolve({ nombre, telefono, ventanaWhatsApp });
       };
     });
   }
@@ -890,7 +934,7 @@
           <div id="mapa" style="height:280px;border-radius:14px;overflow:hidden;border:1px solid var(--border2);"></div>
           <button class="modal-btn" id="confirmarUbicacion" style="margin-top:1rem;">CONFIRMAR UBICACIÓN</button>
         </div>`;
-      document.body.appendChild(ov);
+      agregarBotonCerrar(ov, () => reject(new Error("cancelado_por_usuario")));
       const ubicacionKBROS = [-33.6067, -70.6861];
       const mapa = L.map("mapa").setView(ubicacionKBROS, 16);
       L.marker(ubicacionKBROS).addTo(mapa).bindPopup("✌KBROS😎").openPopup();
@@ -934,6 +978,7 @@
       }
     }
     const datos = await pedirNombreYContacto();
+    if (!datos) return;
     const totalPedido = carrito.reduce((s, p) => s + p.precio * p.cantidad, 0);
     const totalFinal = totalPedido + costoDelivery;
     let mensaje = `Soy ${datos.nombre}\nQuiero - ${modo}`;
@@ -967,7 +1012,18 @@
       console.error("No se pudo registrar el pedido para K-POINTS:", e);
     }
 
-    window.open(`https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`, "_blank");
+    const urlWhatsApp = `https://wa.me/56956446048?text=${encodeURIComponent(mensaje)}`;
+    if (datos.ventanaWhatsApp && !datos.ventanaWhatsApp.closed) {
+      // Caso normal (incluye iPhone/Safari): completamos la pestaña que abrimos al tocar "LISTO ✓"
+      datos.ventanaWhatsApp.location.href = urlWhatsApp;
+    } else {
+      // Respaldo por si el navegador bloqueó la pestaña igual: intentamos abrir una nueva...
+      const nuevaVentana = window.open(urlWhatsApp, "_blank");
+      if (!nuevaVentana) {
+        // ...y si tampoco se pudo, navegamos en la misma pestaña para no dejar al cliente sin enviar el pedido.
+        window.location.href = urlWhatsApp;
+      }
+    }
     limpiarCarrito();
   }
 
@@ -1224,6 +1280,12 @@
     db.ref("users/" + currentUser.uid + "/puntos").on("value", snap => {
       const p = snap.val() || 0;
       if (userData) userData.puntos = p;
+      // K-POINTS: la cuenta admin tiene puntos infinitos (solo en pantalla; nunca se descuentan)
+      if (isAdmin) {
+        document.getElementById("topbarPuntos").textContent = "∞";
+        document.getElementById("topbarRango").textContent = "👑 Administrador";
+        return;
+      }
       document.getElementById("topbarPuntos").textContent = p.toLocaleString("es-CL");
       const rango = calcularRango(p);
       document.getElementById("topbarRango").textContent = rango.icon + " " + rango.name;
@@ -1235,8 +1297,13 @@
   }
 
   function actualizarTopbarUI() {
-    document.getElementById("topbarPuntos").textContent = ((userData && userData.puntos) || 0).toLocaleString("es-CL");
     document.getElementById("topbarFoto").src = (userData && userData.foto) || "https://api.dicebear.com/7.x/initials/svg?seed=KB";
+    if (isAdmin) {
+      document.getElementById("topbarPuntos").textContent = "∞";
+      document.getElementById("topbarRango").textContent = "👑 Administrador";
+      return;
+    }
+    document.getElementById("topbarPuntos").textContent = ((userData && userData.puntos) || 0).toLocaleString("es-CL");
     const rango = calcularRango((userData && userData.puntos) || 0);
     document.getElementById("topbarRango").textContent = rango.icon + " " + rango.name;
   }
@@ -1259,6 +1326,8 @@
   function abrirPerfil() {
     if (!currentUser || !userData) return;
     const rango = calcularRango(userData.puntos || 0);
+    const rangoBadge = isAdmin ? "👑 Administrador" : (rango.icon + " " + rango.name);
+    const puntosBadge = isAdmin ? "∞" : (userData.puntos || 0).toLocaleString("es-CL");
     const ov = crearOverlay();
     ov.innerHTML = `
       <div class="modal-sheet">
@@ -1268,8 +1337,8 @@
           <img src="${userData.foto}" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--accent);margin-bottom:0.8rem;">
           <div style="font-weight:700;font-size:1.1rem;">${userData.nombre}</div>
           <div style="color:var(--muted);font-size:0.85rem;margin-bottom:0.6rem;">${userData.correo}</div>
-          <div class="rank-badge">${rango.icon} ${rango.name}</div>
-          <div style="font-family:'Bebas Neue';font-size:2rem;color:var(--accent);">⭐ ${(userData.puntos || 0).toLocaleString("es-CL")}</div>
+          <div class="rank-badge">${rangoBadge}</div>
+          <div style="font-family:'Bebas Neue';font-size:2rem;color:var(--accent);">⭐ ${puntosBadge}</div>
           <div style="color:var(--muted);font-size:0.8rem;margin-bottom:1rem;">K-POINTS disponibles</div>
           <div style="background:var(--surface2);border-radius:14px;padding:1rem;margin-bottom:1rem;">
             <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">TU CÓDIGO KBROS</div>
@@ -1280,6 +1349,7 @@
         </div>
         <button class="modal-btn" id="btnCerrarPerfil">CERRAR</button>
       </div>`;
+    agregarBotonCerrar(ov);
     try {
       new QRCode(document.getElementById("qrContainer"), {
         text: userData.codigo, width: 150, height: 150,
@@ -1292,31 +1362,36 @@
   // ---------- TRANSFERENCIA ----------
   function abrirTransferencia() {
     if (!currentUser || !userData) return;
+    const saldoTexto = isAdmin ? "∞ (ilimitados)" : (userData.puntos || 0).toLocaleString("es-CL");
     const ov = crearOverlay();
     ov.innerHTML = `
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-title">TRANSFERIR K-POINTS</div>
-        <p style="text-align:center;color:var(--muted);font-size:0.82rem;">Tienes <b style="color:var(--accent);">${(userData.puntos||0).toLocaleString("es-CL")}</b> K-POINTS disponibles</p>
+        <p style="text-align:center;color:var(--muted);font-size:0.82rem;">Tienes <b style="color:var(--accent);">${saldoTexto}</b> K-POINTS disponibles</p>
         <label class="modal-input-label">CÓDIGO KBROS DESTINATARIO</label>
         <input class="modal-input" id="destCodigo" placeholder="KB00000" style="text-transform:uppercase">
         <label class="modal-input-label">CANTIDAD</label>
         <input class="modal-input" id="destCantidad" type="number" placeholder="Ej: 100">
         <button class="modal-btn" id="btnConfirmarTransferencia" style="margin-top:1rem;">TRANSFERIR</button>
       </div>`;
+    agregarBotonCerrar(ov);
     document.getElementById("btnConfirmarTransferencia").onclick = async () => {
       const codigo = document.getElementById("destCodigo").value.trim().toUpperCase();
       const cantidad = parseInt(document.getElementById("destCantidad").value);
       if (!codigo || !cantidad || cantidad <= 0) return alert("Completa todos los campos.");
       if (codigo === userData.codigo) return alert("No puedes transferirte a ti mismo.");
-      if (cantidad > (userData.puntos || 0)) return alert("No tienes suficientes K-POINTS.");
+      // K-POINTS: sin restricción de saldo — cualquier usuario puede transferir la cantidad que quiera.
       try {
         const destUidSnap = await db.ref("codesIndex/" + codigo).get();
         if (!destUidSnap.exists()) return alert("Código no encontrado.");
         const destUid = destUidSnap.val();
-        await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) - cantidad);
+        // La cuenta admin tiene K-POINTS infinitos: nunca se le descuenta saldo al transferir.
+        if (!isAdmin) {
+          await db.ref("users/" + currentUser.uid + "/puntos").transaction(p => (p || 0) - cantidad);
+          await db.ref("users/" + currentUser.uid + "/puntosTransferidos").transaction(p => (p || 0) + cantidad);
+        }
         await db.ref("users/" + destUid + "/puntos").transaction(p => (p || 0) + cantidad);
-        await db.ref("users/" + currentUser.uid + "/puntosTransferidos").transaction(p => (p || 0) + cantidad);
         await db.ref("users/" + destUid + "/puntosRecibidos").transaction(p => (p || 0) + cantidad);
         await db.ref("transfers").push({ de: userData.codigo, para: codigo, cantidad, fecha: Date.now() });
         await db.ref("users/" + currentUser.uid + "/historial").push({ tipo: "transferencia_enviada", cantidad, para: codigo, fecha: Date.now() });
@@ -1347,6 +1422,7 @@
         <input class="modal-input" id="pyaFecha" type="date">
         <button class="modal-btn" id="btnEnviarPya" style="margin-top:1rem;">ENVIAR</button>
       </div>`;
+    agregarBotonCerrar(ov);
     document.getElementById("btnEnviarPya").onclick = async () => {
       const monto = parseInt(document.getElementById("pyaMonto").value);
       const numero = document.getElementById("pyaNumero").value.trim();
@@ -1386,6 +1462,7 @@
         </div>
         <button class="modal-btn" id="btnCerrarAyuda" style="margin-top:1rem;">ENTENDIDO</button>
       </div>`;
+    agregarBotonCerrar(ov);
     document.getElementById("btnCerrarAyuda").onclick = () => document.body.removeChild(ov);
   }
 
@@ -1406,6 +1483,7 @@
         <div id="adminContenido"></div>
         <button class="modal-btn" id="btnCerrarAdmin" style="margin-top:1rem;">CERRAR</button>
       </div>`;
+    agregarBotonCerrar(ov);
     cargarEstadisticasAdmin();
     cargarPendientesAdmin();
     ov.querySelectorAll(".admin-tab-btn").forEach(btn => {
@@ -1491,34 +1569,45 @@
     const cont = document.getElementById("adminContenido");
     if (!cont) return;
     cont.innerHTML = `
-      <input class="modal-input" id="buscarInput" placeholder="Nombre, correo o código KBROS" style="margin-bottom:0.8rem;">
+      <input class="modal-input" id="buscarInput" placeholder="Nombre, correo o código KBROS" style="margin-bottom:0.6rem;">
+      <button class="modal-btn" id="btnBuscarCliente" style="margin-top:0;margin-bottom:0.9rem;">🔍 BUSCAR</button>
       <div id="resultadosBusqueda"></div>`;
-    document.getElementById("buscarInput").oninput = async (e) => {
-      const q = e.target.value.trim().toLowerCase();
-      const cont2 = document.getElementById("resultadosBusqueda");
-      if (q.length < 2) { cont2.innerHTML = ""; return; }
-      const snap = await db.ref("users").get();
-      const users = snap.val() || {};
-      const resultados = Object.entries(users).filter(([uid, u]) =>
-        (u.nombre || "").toLowerCase().includes(q) ||
-        (u.correo || "").toLowerCase().includes(q) ||
-        (u.codigo || "").toLowerCase().includes(q));
-      cont2.innerHTML = resultados.map(([uid, u]) => `
-        <div class="pending-item">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="${u.foto}" style="width:36px;height:36px;border-radius:50%;">
-            <div><b>${u.nombre}</b><br><span style="color:var(--muted);font-size:0.76rem;">${u.codigo} · ⭐ ${(u.puntos || 0).toLocaleString("es-CL")}</span></div>
-          </div>
-          <div class="admin-quick-btns">
-            <button class="plus" onclick="ajustarPuntos('${u.codigo}',50)">+50</button>
-            <button class="plus" onclick="ajustarPuntos('${u.codigo}',100)">+100</button>
-            <button class="plus" onclick="ajustarPuntos('${u.codigo}',500)">+500</button>
-            <button class="minus" onclick="ajustarPuntos('${u.codigo}',-50)">-50</button>
-            <button class="minus" onclick="ajustarPuntos('${u.codigo}',-100)">-100</button>
-            <button onclick="ajustarPuntosCustom('${u.codigo}')">Otro</button>
-          </div>
-        </div>`).join("") || '<p style="color:var(--muted);text-align:center;">Sin resultados</p>';
+    document.getElementById("btnBuscarCliente").onclick = ejecutarBusquedaAdminClientes;
+    document.getElementById("buscarInput").onkeydown = (e) => {
+      if (e.key === "Enter") ejecutarBusquedaAdminClientes();
     };
+  }
+
+  // K-POINTS: separada de mostrarBuscadorAdmin() para poder refrescar los resultados
+  // (ej. después de sumar/restar puntos) sin borrar lo que el admin escribió.
+  async function ejecutarBusquedaAdminClientes() {
+    const inputEl = document.getElementById("buscarInput");
+    const cont2 = document.getElementById("resultadosBusqueda");
+    if (!inputEl || !cont2) return;
+    const q = inputEl.value.trim().toLowerCase();
+    if (q.length < 2) { cont2.innerHTML = '<p style="color:var(--muted);text-align:center;">Escribe al menos 2 caracteres.</p>'; return; }
+    cont2.innerHTML = '<p style="text-align:center;color:var(--muted);">Buscando...</p>';
+    const snap = await db.ref("users").get();
+    const users = snap.val() || {};
+    const resultados = Object.entries(users).filter(([uid, u]) =>
+      (u.nombre || "").toLowerCase().includes(q) ||
+      (u.correo || "").toLowerCase().includes(q) ||
+      (u.codigo || "").toLowerCase().includes(q));
+    cont2.innerHTML = resultados.map(([uid, u]) => `
+      <div class="pending-item">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="${u.foto}" style="width:36px;height:36px;border-radius:50%;">
+          <div><b>${u.nombre}</b><br><span style="color:var(--muted);font-size:0.76rem;">${u.codigo} · ⭐ ${(u.puntos || 0).toLocaleString("es-CL")}</span></div>
+        </div>
+        <div class="admin-quick-btns">
+          <button class="plus" onclick="ajustarPuntos('${u.codigo}',50)">+50</button>
+          <button class="plus" onclick="ajustarPuntos('${u.codigo}',100)">+100</button>
+          <button class="plus" onclick="ajustarPuntos('${u.codigo}',500)">+500</button>
+          <button class="minus" onclick="ajustarPuntos('${u.codigo}',-50)">-50</button>
+          <button class="minus" onclick="ajustarPuntos('${u.codigo}',-100)">-100</button>
+          <button onclick="ajustarPuntosCustom('${u.codigo}')">Otro</button>
+        </div>
+      </div>`).join("") || '<p style="color:var(--muted);text-align:center;">Sin resultados</p>';
   }
 
   async function ajustarPuntos(codigo, cantidad, motivo) {
@@ -1529,7 +1618,7 @@
     await db.ref("users/" + uid + "/historial").push({ tipo: cantidad > 0 ? "bonificacion" : "descuento", cantidad, motivo: motivo || "Ajuste manual admin", fecha: Date.now() });
     await db.ref("transactions").push({ tipo: "ajuste_manual", codigo, cantidad, admin: currentUser.email, motivo: motivo || "", fecha: Date.now() });
     showToast(cantidad > 0 ? `+${cantidad} pts a ${codigo}` : `${cantidad} pts a ${codigo}`);
-    mostrarBuscadorAdmin();
+    ejecutarBusquedaAdminClientes();
   }
 
   function ajustarPuntosCustom(codigo) {
