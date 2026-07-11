@@ -1,0 +1,110 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Los componentes con badges (nav-dot, cart-dot, etc.) fijan su propio `display`,
+   lo que gana por origen de cascada sobre el `display:none` del UA para [hidden].
+   Esta regla asegura que el atributo hidden siempre gane, sin importar el componente. */
+[hidden] { display: none !important; }
+html {
+  scroll-behavior: smooth;
+  /* Evita el rebote elástico de iOS/Android al hacer overscroll: se siente a app, no a web. */
+  overscroll-behavior-y: none;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+body.modal-open {
+  overflow: hidden; /* el fondo no debe scrollear detrás de una hoja modal, como en apps nativas */
+}
+img { max-width: 100%; display: block; }
+button, input, select { font-family: inherit; }
+button {
+  cursor: pointer;
+  touch-action: manipulation; /* saca el delay de 300ms del tap y el doble-tap-zoom */
+}
+a, button, .product-card, .nav-item, .category-chip { -webkit-tap-highlight-color: transparent; }
+
+/* Accesibilidad: foco visible siempre, incluso si algún componente lo resetea */
+:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  z-index: 2000;
+  border-radius: 0 0 10px 0;
+  font-weight: 700;
+}
+.skip-link:focus { left: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Contenido con scroll horizontal (promos, más vendidos) */
+.hscroll {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 0.2rem 1rem 0.6rem;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
+}
+.hscroll::-webkit-scrollbar { display: none; }
+.hscroll { scrollbar-width: none; }
+.hscroll.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+.hscroll.dragging * { pointer-events: none; }
+
+.section {
+  padding: 1.4rem 0 0.4rem;
+}
+.section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 1rem;
+  margin-bottom: 0.7rem;
+}
+.section-title h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.section-title .see-all {
+  font-size: 0.8rem;
+  color: var(--accent2);
+  font-weight: 600;
+  background: none;
+  border: none;
+}
+
+/* Reduce motion: respeta la preferencia del sistema en toda la app */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
