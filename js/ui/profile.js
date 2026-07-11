@@ -272,9 +272,17 @@ export function initProfileView() {
 
   function wireLogin(root) {
     root.querySelector("#btnGoogleLogin")?.addEventListener("click", async () => {
-      const profile = await askFakeGoogleProfile();
-      if (!profile) return;
-      await loginWithGoogle(profile);
+      if (USE_MOCK) {
+        // Solo en modo demostración local: simula el selector de cuentas de Google
+        // para poder probar la app sin credenciales reales.
+        const profile = await askFakeGoogleProfile();
+        if (!profile) return;
+        await loginWithGoogle(profile);
+      } else {
+        // En producción: ventana real de Google. El nombre y correo vienen tal cual
+        // de la cuenta de Google elegida, el cliente no puede escribirlos a mano.
+        await loginWithGoogle();
+      }
     });
     root.querySelector("#btnGuest")?.addEventListener("click", () => enterAsGuest());
   }
