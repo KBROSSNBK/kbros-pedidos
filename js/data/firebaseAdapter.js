@@ -6,6 +6,13 @@ function periodKey(date = new Date()) {
   return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
 }
 
+/** Las misiones se lanzaron con esta fecha. Los pedidos aprobados ANTES de esto (de
+ * cuando la tienda probaba el sistema, antes de que las misiones existieran para los
+ * clientes) no cuentan para el progreso — si no, cualquier cuenta con historial previo
+ * este mes aparecía con la misión "ya completada" el primer día, lista para reclamar sin
+ * haber hecho nada nuevo. */
+const MISSIONS_TRACKING_SINCE = new Date("2026-07-11T00:00:00").getTime();
+
 /** La página anterior guardaba las misiones con otros nombres de campo
  * (descripcion/icono/meta/nombre/recompensa/tipo, siempre en puntos). Para no perder
  * ni romper las misiones que ya existen en la Firebase real, se normalizan acá al leerlas
@@ -27,7 +34,7 @@ function normalizeMission(m) {
 
 function computeProgress(u, period) {
   const hist = Object.values(u.historial || {}).filter(
-    (h) => h.tipo === "puntos_aprobados" && periodKey(new Date(h.fecha)) === period
+    (h) => h.tipo === "puntos_aprobados" && h.fecha >= MISSIONS_TRACKING_SINCE && periodKey(new Date(h.fecha)) === period
   );
   return {
     compras: hist.length,

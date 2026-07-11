@@ -3,10 +3,17 @@
  * Más vendidos). Por defecto un div con overflow-x:auto solo se puede desplazar con
  * scroll/touch; en desktop, sin esto, el usuario no tiene forma de arrastrarlo con clic.
  *
- * Distingue arrastre de click: la clase "dragging" (que desactiva pointer-events en los
- * hijos vía CSS) solo se agrega DESPUÉS de superar el umbral de movimiento, nunca en el
- * pointerdown. Agregarla de entrada rompía el botón "+" bajo el dedo/cursor: el navegador
- * cancela el click si el elemento pierde pointer-events entre el pointerdown y el click.
+ * SOLO para mouse: en touch, el navegador ya sabe distinguir un swipe de un tap nativamente
+ * (el scroll horizontal táctil funciona solo, sin JS). Si este mismo código interceptaba
+ * también los toques, cualquier micro-movimiento normal del dedo al tocar (mucho más de
+ * 6px, algo normal en una pantalla táctil) se interpretaba como "arrastre" y cancelaba el
+ * click del botón "+" — el cliente tocaba "+" y no pasaba nada. Dejar touch fuera de esto
+ * evita esa clase entera de bug.
+ *
+ * Distingue arrastre de click (mouse): la clase "dragging" (que desactiva pointer-events en
+ * los hijos vía CSS) solo se agrega DESPUÉS de superar el umbral de movimiento, nunca en el
+ * pointerdown. Agregarla de entrada rompía el botón "+" bajo el cursor: el navegador cancela
+ * el click si el elemento pierde pointer-events entre el pointerdown y el click.
  */
 const UMBRAL_PX = 6;
 
@@ -20,6 +27,7 @@ export function enableDragScroll(el) {
   let moved = false;
 
   el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch" || e.pointerType === "pen") return; // deja el scroll nativo
     if (e.button !== undefined && e.button !== 0) return; // solo click principal
     tracking = true;
     moved = false;

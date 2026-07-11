@@ -160,9 +160,13 @@ export function initKpointsView() {
         .join("");
       list.querySelectorAll("[data-mision]").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          const res = await adapter.claimMission(authUser.uid, btn.dataset.mision);
-          showToast((res.ok ? "🎉 " : "❌ ") + res.message);
-          if (res.ok) paint();
+          try {
+            const res = await adapter.claimMission(authUser.uid, btn.dataset.mision);
+            showToast((res.ok ? "🎉 " : "❌ ") + res.message);
+            if (res.ok) paint();
+          } catch (err) {
+            showToast("❌ No se pudo reclamar: " + (err.message || err));
+          }
         });
       });
     }

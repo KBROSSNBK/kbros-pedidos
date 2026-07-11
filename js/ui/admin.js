@@ -2,7 +2,7 @@ import { getAdapter } from "../data/dataAdapter.js";
 import { openModal } from "./modal.js";
 import { showToast } from "./toast.js";
 import { getCategories } from "../data/menuData.js";
-import { ADMIN_EMAIL } from "../config.js";
+import { ADMIN_EMAIL, USE_MOCK } from "../config.js";
 import { calcularRango } from "../state/rank.js";
 
 const CLP = new Intl.NumberFormat("es-CL");
@@ -76,11 +76,15 @@ export async function openAdminPanel() {
     cont.querySelectorAll("[data-action]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.closest(".pending-item").dataset.id;
-        if (btn.dataset.action === "approve") await adapter.admin.approvePending(id);
-        else await adapter.admin.rejectPending(id);
-        window.dispatchEvent(new CustomEvent("kbros:pending-changed"));
-        await paintStats();
-        await paintPendientes();
+        try {
+          if (btn.dataset.action === "approve") await adapter.admin.approvePending(id);
+          else await adapter.admin.rejectPending(id);
+          window.dispatchEvent(new CustomEvent("kbros:pending-changed"));
+          await paintStats();
+          await paintPendientes();
+        } catch (err) {
+          showToast("❌ No se pudo procesar: " + (err.message || err));
+        }
       });
     });
   }
@@ -200,19 +204,27 @@ export async function openAdminPanel() {
 
     formSheet.querySelectorAll("[data-cant]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const res = await adapter.admin.adjustPoints(u.codigo, parseInt(btn.dataset.cant, 10), "Ajuste manual admin");
-        showToast(res.message || "Ajuste aplicado");
-        close();
-        onChange();
+        try {
+          const res = await adapter.admin.adjustPoints(u.codigo, parseInt(btn.dataset.cant, 10), "Ajuste manual admin");
+          showToast(res.message || "Ajuste aplicado");
+          close();
+          onChange();
+        } catch (err) {
+          showToast("❌ No se pudo ajustar: " + (err.message || err));
+        }
       });
     });
     formSheet.querySelector("#fichaCustomBtn").addEventListener("click", async () => {
       const cantidad = parseInt(formSheet.querySelector("#fichaCustomPts").value, 10);
       if (!cantidad) return showToast("Ingresa una cantidad distinta de cero");
-      const res = await adapter.admin.adjustPoints(u.codigo, cantidad, "Ajuste manual admin (monto personalizado)");
-      showToast(res.message || "Ajuste aplicado");
-      close();
-      onChange();
+      try {
+        const res = await adapter.admin.adjustPoints(u.codigo, cantidad, "Ajuste manual admin (monto personalizado)");
+        showToast(res.message || "Ajuste aplicado");
+        close();
+        onChange();
+      } catch (err) {
+        showToast("❌ No se pudo ajustar: " + (err.message || err));
+      }
     });
     formSheet.querySelector("#btnEditarCumple").addEventListener("click", () => {
       openBirthdayForm(u, () => { close(); onChange(); });
@@ -256,10 +268,14 @@ export async function openAdminPanel() {
     formSheet.querySelector("#bSave").addEventListener("click", async () => {
       const val = formSheet.querySelector("#bDate").value;
       if (!val) return showToast("Selecciona una fecha");
-      await adapter.saveBirthday(u.uid, val);
-      showToast("🎂 Fecha actualizada");
-      close();
-      onSaved();
+      try {
+        await adapter.saveBirthday(u.uid, val);
+        showToast("🎂 Fecha actualizada");
+        close();
+        onSaved();
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
+      }
     });
   }
 
@@ -268,7 +284,7 @@ export async function openAdminPanel() {
     const products = await adapter.admin.getAllProducts();
     const categories = getCategories();
     cont.innerHTML = `
-      <p class="demo-note" style="margin-bottom:0.6rem;">Catálogo listo para editarse desde acá y guardarse en Firebase (nodo <code>products/</code>). Cambios aquí no afectan la página en línea mientras el prototipo esté en modo demostración.</p>
+      <p class="demo-note" style="margin-bottom:0.6rem;">${USE_MOCK ? "Catálogo listo para editarse desde acá y guardarse en Firebase (nodo <code>products/</code>). Cambios aquí no afectan la página en línea mientras el prototipo esté en modo demostración." : "Los cambios acá se guardan de inmediato en Firebase y se reflejan en la página en línea."}</p>
       <button class="modal-btn outline" id="btnNuevoProducto" type="button">+ NUEVO PRODUCTO</button>
       <div id="productList" style="margin-top:0.6rem;"></div>`;
     const list = cont.querySelector("#productList");
@@ -290,8 +306,12 @@ export async function openAdminPanel() {
     list.querySelectorAll("[data-action='del']").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.closest(".admin-product-row").dataset.id;
-        await adapter.admin.deleteProduct(id);
-        await paintProductos();
+        try {
+          await adapter.admin.deleteProduct(id);
+          await paintProductos();
+        } catch (err) {
+          showToast("❌ No se pudo eliminar: " + (err.message || err));
+        }
       });
     });
     cont.querySelector("#btnNuevoProducto").addEventListener("click", () => {
@@ -352,9 +372,13 @@ export async function openAdminPanel() {
         description: formSheet.querySelector("#fDesc").value.trim(),
         image: currentImage || null,
       };
-      await adapter.admin.saveProduct(updated);
-      close();
-      onSaved();
+      try {
+        await adapter.admin.saveProduct(updated);
+        close();
+        onSaved();
+      } catch (err) {
+        showToast("❌ No se pudo guardar el producto: " + (err.message || err));
+      }
     });
   }
 
@@ -383,8 +407,12 @@ export async function openAdminPanel() {
     list.querySelectorAll("[data-action='del']").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.closest(".admin-product-row").dataset.id;
-        await adapter.admin.deleteReward(id);
-        await paintRecompensas();
+        try {
+          await adapter.admin.deleteReward(id);
+          await paintRecompensas();
+        } catch (err) {
+          showToast("❌ No se pudo eliminar: " + (err.message || err));
+        }
       });
     });
     cont.querySelector("#btnNuevaRecompensa").addEventListener("click", () => {
@@ -413,9 +441,13 @@ export async function openAdminPanel() {
       const cost = parseInt(formSheet.querySelector("#rCost").value, 10);
       if (!name || !cost) return showToast("Completa nombre y costo");
       const updated = { ...r, name, cost, icon: formSheet.querySelector("#rIcon").value.trim() || "🎁", description: formSheet.querySelector("#rDesc").value.trim() };
-      await adapter.admin.saveReward(updated);
-      close();
-      onSaved();
+      try {
+        await adapter.admin.saveReward(updated);
+        close();
+        onSaved();
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
+      }
     });
   }
 
@@ -451,8 +483,12 @@ export async function openAdminPanel() {
     list.querySelectorAll("[data-action='del']").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.closest(".admin-product-row").dataset.id;
-        await adapter.admin.deleteMission(id);
-        await paintMisiones();
+        try {
+          await adapter.admin.deleteMission(id);
+          await paintMisiones();
+        } catch (err) {
+          showToast("❌ No se pudo eliminar: " + (err.message || err));
+        }
       });
     });
     cont.querySelector("#btnNuevaMision").addEventListener("click", () => {
@@ -522,9 +558,13 @@ export async function openAdminPanel() {
         rewardType,
         rewardValue: rewardType === "puntos" ? parseInt(rewardValueRaw, 10) : rewardValueRaw,
       };
-      await adapter.admin.saveMission(updated);
-      close();
-      onSaved();
+      try {
+        await adapter.admin.saveMission(updated);
+        close();
+        onSaved();
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
+      }
     });
   }
 
@@ -586,9 +626,13 @@ export async function openAdminPanel() {
       box.querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const updated = emails.filter((e) => e !== btn.dataset.remove);
-          const saved = await adapter.admin.saveSettings({ adminEmails: updated });
-          renderAdminChips(saved.adminEmails || updated);
-          showToast("Administrador quitado");
+          try {
+            const saved = await adapter.admin.saveSettings({ adminEmails: updated });
+            renderAdminChips(saved.adminEmails || updated);
+            showToast("Administrador quitado");
+          } catch (err) {
+            showToast("❌ No se pudo quitar: " + (err.message || err));
+          }
         });
       });
     }
@@ -602,11 +646,15 @@ export async function openAdminPanel() {
       const current = s.adminEmails || [];
       if (current.includes(email)) return showToast("Ese correo ya es administrador");
       const updated = [...current, email];
-      const saved = await adapter.admin.saveSettings({ adminEmails: updated });
-      s.adminEmails = saved.adminEmails || updated;
-      renderAdminChips(s.adminEmails);
-      input.value = "";
-      showToast("✅ Administrador agregado");
+      try {
+        const saved = await adapter.admin.saveSettings({ adminEmails: updated });
+        s.adminEmails = saved.adminEmails || updated;
+        renderAdminChips(s.adminEmails);
+        input.value = "";
+        showToast("✅ Administrador agregado");
+      } catch (err) {
+        showToast("❌ No se pudo agregar: " + (err.message || err));
+      }
     });
 
     cont.querySelector("#sStreakInfinite").addEventListener("change", (e) => {
@@ -628,9 +676,13 @@ export async function openAdminPanel() {
         streakMaxPercent: parseFloat(cont.querySelector("#sStreakMax").value) || 0,
         streakInfinite: cont.querySelector("#sStreakInfinite").checked,
       };
-      const saved = await adapter.admin.saveSettings(patch);
-      window.dispatchEvent(new CustomEvent("kbros:settings-updated", { detail: saved || patch }));
-      showToast("✅ Ajustes guardados");
+      try {
+        const saved = await adapter.admin.saveSettings(patch);
+        window.dispatchEvent(new CustomEvent("kbros:settings-updated", { detail: saved || patch }));
+        showToast("✅ Ajustes guardados");
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
+      }
     });
   }
 }

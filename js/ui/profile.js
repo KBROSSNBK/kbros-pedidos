@@ -216,9 +216,13 @@ function openTransferModal(userData, isAdmin) {
     const cantidad = parseInt(sheet.querySelector("#destCantidad").value, 10);
     if (!codigo || !cantidad || cantidad <= 0) return showToast("Completa todos los campos");
     const adapter = await getAdapter();
-    const res = await adapter.transferPoints(userData.codigo, codigo, cantidad);
-    showToast(res.ok ? "✅ " + res.message : "❌ " + res.message);
-    if (res.ok) close();
+    try {
+      const res = await adapter.transferPoints(userData.codigo, codigo, cantidad);
+      showToast(res.ok ? "✅ " + res.message : "❌ " + res.message);
+      if (res.ok) close();
+    } catch (err) {
+      showToast("❌ No se pudo transferir: " + (err.message || err));
+    }
   });
 }
 
@@ -265,8 +269,12 @@ export function initProfileView() {
       const val = root.querySelector("#fechaNacInput").value;
       if (!val) return showToast("Selecciona una fecha");
       const adapter = await getAdapter();
-      await adapter.saveBirthday(userData.uid, val);
-      showToast("🎂 ¡Fecha guardada!");
+      try {
+        await adapter.saveBirthday(userData.uid, val);
+        showToast("🎂 ¡Fecha guardada!");
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
+      }
     });
   }
 

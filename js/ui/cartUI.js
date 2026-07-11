@@ -316,6 +316,7 @@ export async function startCheckout() {
   mensaje += `\n\nTOTAL: $${totalFinal}`;
 
   const { authUser, userData } = sessionStore.getState();
+  let puntosRegistrados = true;
   try {
     const adapter = await getAdapter();
     if (authUser && userData) {
@@ -335,6 +336,7 @@ export async function startCheckout() {
     }
   } catch (e) {
     console.error("No se pudo registrar el pedido para K-POINTS:", e);
+    puntosRegistrados = false; // el pedido igual se envía por WhatsApp, no se pierde la venta
   }
 
   const url = `https://wa.me/${checkoutSettings.whatsappNumber || WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`;
@@ -345,7 +347,7 @@ export async function startCheckout() {
     if (!w) window.location.href = url;
   }
   clearCart();
-  showToast("✅ ¡Pedido enviado!");
+  showToast(puntosRegistrados ? "✅ ¡Pedido enviado!" : "⚠️ Tu pedido se envió, pero no pudimos registrar los K-Points. Avísale al local.");
 }
 
 /**
