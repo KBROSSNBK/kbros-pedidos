@@ -25,21 +25,31 @@ export async function openAdminPanel() {
     <div id="adminContent"></div>
   `);
 
-  await paintStats();
-  await paintPendientes();
+  try {
+    await paintStats();
+    await paintPendientes();
+  } catch (err) {
+    sheet.querySelector("#adminContent").innerHTML = `<p class="empty-state">❌ No se pudo cargar: ${err.message || err}</p>`;
+  }
 
   sheet.querySelectorAll(".admin-tab-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       sheet.querySelectorAll(".admin-tab-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
-      if (tab === "pendientes") await paintPendientes();
-      if (tab === "historial") await paintHistorialPedidos();
-      if (tab === "buscar") paintBuscar();
-      if (tab === "productos") await paintProductos();
-      if (tab === "recompensas") await paintRecompensas();
-      if (tab === "misiones") await paintMisiones();
-      if (tab === "ajustes") await paintAjustes();
+      const cont = sheet.querySelector("#adminContent");
+      cont.innerHTML = `<p class="empty-state">Cargando…</p>`;
+      try {
+        if (tab === "pendientes") await paintPendientes();
+        if (tab === "historial") await paintHistorialPedidos();
+        if (tab === "buscar") paintBuscar();
+        if (tab === "productos") await paintProductos();
+        if (tab === "recompensas") await paintRecompensas();
+        if (tab === "misiones") await paintMisiones();
+        if (tab === "ajustes") await paintAjustes();
+      } catch (err) {
+        cont.innerHTML = `<p class="empty-state">❌ No se pudo cargar: ${err.message || err}</p>`;
+      }
     });
   });
 
