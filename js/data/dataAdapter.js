@@ -8,6 +8,7 @@ import { USE_MOCK } from "../config.js";
  *
  * Interfaz que debe cumplir cualquier adapter:
  *   getProducts(): Promise<Product[]>
+ *   getCategories(): Promise<Category[]>  // secciones del menú, editables desde el panel admin
  *   getBestSellers(limit): Promise<Product[]>  // calculado de ventas reales, con relleno manual
  *   recordProductSales(items): Promise<void>   // items: [{id, cantidad}], se llama al confirmar un pedido
  *   getSettings(): Promise<Settings>
@@ -41,6 +42,9 @@ import { USE_MOCK } from "../config.js";
  *     adjustPoints(code, amount, reason): Promise<void>
  *     saveProduct(product): Promise<void>
  *     deleteProduct(id): Promise<void>
+ *     getCategoriesAdmin(): Promise<Category[]>
+ *     saveCategory(category): Promise<void>
+ *     deleteCategory(id): Promise<void>
  *     saveReward(reward): Promise<void>
  *     deleteReward(id): Promise<void>
  *     getMissionsAdmin(): Promise<Mission[]>

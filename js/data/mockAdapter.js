@@ -1,5 +1,5 @@
 import { ADMIN_EMAIL, DEFAULT_SETTINGS, DEFAULT_REWARDS, DEFAULT_MISSIONS } from "../config.js";
-import { getAllProducts } from "./menuData.js";
+import { getAllProducts, getCategories as getLocalCategories } from "./menuData.js";
 import { calcularNuevaRacha } from "../state/streak.js";
 
 /**
@@ -17,6 +17,7 @@ const KEY = {
   likes: "kbros_mock_likes",
   settings: "kbros_mock_settings",
   products: "kbros_mock_products",
+  categories: "kbros_mock_categories",
   missions: "kbros_mock_missions",
   productStats: "kbros_mock_productStats",
 };
@@ -47,6 +48,7 @@ function ensureSeed() {
   if (read(KEY.rewards, null) === null) write(KEY.rewards, DEFAULT_REWARDS);
   if (read(KEY.settings, null) === null) write(KEY.settings, DEFAULT_SETTINGS);
   if (read(KEY.products, null) === null) write(KEY.products, getAllProducts());
+  if (read(KEY.categories, null) === null) write(KEY.categories, getLocalCategories());
   if (read(KEY.missions, null) === null) write(KEY.missions, DEFAULT_MISSIONS);
   if (read(KEY.users, null) === null) write(KEY.users, {});
   if (read(KEY.pending, null) === null) write(KEY.pending, []);
@@ -111,6 +113,10 @@ function fileToCompressedDataUrl(file, maxSize = 640) {
 export const mockAdapter = {
   async getProducts() {
     return read(KEY.products, getAllProducts());
+  },
+
+  async getCategories() {
+    return read(KEY.categories, getLocalCategories());
   },
 
   /** "Más vendidos" real: se calcula de las ventas efectivas, con los productos marcados
@@ -503,6 +509,20 @@ export const mockAdapter = {
     async deleteProduct(id) {
       const products = read(KEY.products, getAllProducts()).filter((x) => x.id !== id);
       write(KEY.products, products);
+    },
+    async getCategoriesAdmin() {
+      return read(KEY.categories, getLocalCategories());
+    },
+    async saveCategory(category) {
+      const categories = read(KEY.categories, getLocalCategories());
+      const idx = categories.findIndex((x) => x.id === category.id);
+      if (idx >= 0) categories[idx] = category;
+      else categories.push(category);
+      write(KEY.categories, categories);
+    },
+    async deleteCategory(id) {
+      const categories = read(KEY.categories, getLocalCategories()).filter((x) => x.id !== id);
+      write(KEY.categories, categories);
     },
     async getRewardsAdmin() {
       return read(KEY.rewards, DEFAULT_REWARDS);

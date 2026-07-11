@@ -1,5 +1,5 @@
 import { ADMIN_EMAIL, DEFAULT_SETTINGS, DEFAULT_MISSIONS } from "../config.js";
-import { getAllProducts } from "./menuData.js";
+import { getAllProducts, getCategories as getLocalCategories } from "./menuData.js";
 import { calcularNuevaRacha } from "../state/streak.js";
 
 function periodKey(date = new Date()) {
@@ -60,7 +60,12 @@ const firebaseConfig = {
   authDomain: "kbros-web.firebaseapp.com",
   databaseURL: "https://kbros-web-default-rtdb.firebaseio.com",
   projectId: "kbros-web",
-  storageBucket: "kbros-web.firebasestorage.com",
+  // OJO: Firebase Storage nunca se activó para este proyecto (verificado: no existe ningún
+  // bucket bajo ningún nombre posible). Hay que habilitarlo desde la consola de Firebase
+  // (Storage -> "Comenzar") antes de que la subida de fotos pueda funcionar. Este es el
+  // nombre de bucket que usan los proyectos nuevos por defecto; confírmalo en la consola
+  // una vez que lo actives y avísame si es distinto.
+  storageBucket: "kbros-web.firebasestorage.app",
   messagingSenderId: "281753184526",
   appId: "1:281753184526:web:c6e824fefd7b261a428f5f",
 };
@@ -155,6 +160,18 @@ export const firebaseAdapter = {
     const obj = {};
     seed.forEach((p) => (obj[p.id] = p));
     await db.ref("products").set(obj);
+    return seed;
+  },
+
+  async getCategories() {
+    const { db } = await initFirebase();
+    const snap = await db.ref("categories").get();
+    if (snap.exists()) return Object.values(snap.val());
+    // Primera vez: siembra el nodo con las categorías locales para que queden editables.
+    const seed = getLocalCategories();
+    const obj = {};
+    seed.forEach((c) => (obj[c.id] = c));
+    await db.ref("categories").set(obj);
     return seed;
   },
 
@@ -523,6 +540,19 @@ export const firebaseAdapter = {
     async deleteProduct(id) {
       const { db } = await initFirebase();
       await db.ref("products/" + id).remove();
+    },
+    async getCategoriesAdmin() {
+      const { db } = await initFirebase();
+      const snap = await db.ref("categories").get();
+      return snap.exists() ? Object.values(snap.val()) : getLocalCategories();
+    },
+    async saveCategory(category) {
+      const { db } = await initFirebase();
+      await db.ref("categories/" + category.id).set(category);
+    },
+    async deleteCategory(id) {
+      const { db } = await initFirebase();
+      await db.ref("categories/" + id).remove();
     },
     async getRewardsAdmin() {
       const { db } = await initFirebase();

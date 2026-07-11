@@ -1,7 +1,6 @@
 import { getAdapter } from "../data/dataAdapter.js";
 import { openModal } from "./modal.js";
 import { showToast } from "./toast.js";
-import { getCategories } from "../data/menuData.js";
 import { ADMIN_EMAIL, USE_MOCK, sanitizeEmailKey } from "../config.js";
 import { calcularRango } from "../state/rank.js";
 
@@ -18,6 +17,7 @@ export async function openAdminPanel() {
       <button class="admin-tab-btn" data-tab="historial" type="button">Historial</button>
       <button class="admin-tab-btn" data-tab="buscar" type="button">Clientes</button>
       <button class="admin-tab-btn" data-tab="productos" type="button">Productos</button>
+      <button class="admin-tab-btn" data-tab="categorias" type="button">Categorías</button>
       <button class="admin-tab-btn" data-tab="recompensas" type="button">Recompensas</button>
       <button class="admin-tab-btn" data-tab="misiones" type="button">Misiones</button>
       <button class="admin-tab-btn" data-tab="ajustes" type="button">Ajustes</button>
@@ -44,6 +44,7 @@ export async function openAdminPanel() {
         if (tab === "historial") await paintHistorialPedidos();
         if (tab === "buscar") paintBuscar();
         if (tab === "productos") await paintProductos();
+        if (tab === "categorias") await paintCategorias();
         if (tab === "recompensas") await paintRecompensas();
         if (tab === "misiones") await paintMisiones();
         if (tab === "ajustes") await paintAjustes();
@@ -291,8 +292,7 @@ export async function openAdminPanel() {
 
   async function paintProductos() {
     const cont = sheet.querySelector("#adminContent");
-    const products = await adapter.admin.getAllProducts();
-    const categories = getCategories();
+    const [products, categories] = await Promise.all([adapter.admin.getAllProducts(), adapter.admin.getCategoriesAdmin()]);
     cont.innerHTML = `
       <p class="demo-note" style="margin-bottom:0.6rem;">${USE_MOCK ? "Catálogo listo para editarse desde acá y guardarse en Firebase (nodo <code>products/</code>). Cambios aquí no afectan la página en línea mientras el prototipo esté en modo demostración." : "Los cambios acá se guardan de inmediato en Firebase y se reflejan en la página en línea."}</p>
       <button class="modal-btn outline" id="btnNuevoProducto" type="button">+ NUEVO PRODUCTO</button>
@@ -388,6 +388,76 @@ export async function openAdminPanel() {
         onSaved();
       } catch (err) {
         showToast("❌ No se pudo guardar el producto: " + (err.message || err));
+      }
+    });
+  }
+
+  async function paintCategorias() {
+    const cont = sheet.querySelector("#adminContent");
+    const categories = await adapter.admin.getCategoriesAdmin();
+    cont.innerHTML = `
+      <p class="demo-note" style="margin-bottom:0.6rem;">Estas son las secciones del menú (Completos, Papas Fritas, etc). Eliminar una categoría no borra los productos que ya la usan, pero dejan de aparecer agrupados en el menú hasta que les asignes otra.</p>
+      <button class="modal-btn outline" id="btnNuevaCategoria" type="button">+ NUEVA CATEGORÍA</button>
+      <div id="categoryList" style="margin-top:0.6rem;"></div>`;
+    const list = cont.querySelector("#categoryList");
+    list.innerHTML = categories
+      .map((c) => `
+        <div class="admin-product-row" data-id="${c.id}">
+          <div class="name">${c.icon || "🍽️"} ${c.label}</div>
+          <button class="btn-add" data-action="edit" type="button" aria-label="Editar">✎</button>
+          <button class="btn-add" data-action="del" type="button" aria-label="Eliminar">✕</button>
+        </div>`)
+      .join("");
+    list.querySelectorAll("[data-action='edit']").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.closest(".admin-product-row").dataset.id;
+        openCategoryForm(categories.find((c) => c.id === id), async () => { await paintCategorias(); });
+      });
+    });
+    list.querySelectorAll("[data-action='del']").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.closest(".admin-product-row").dataset.id;
+        try {
+          await adapter.admin.deleteCategory(id);
+          await paintCategorias();
+        } catch (err) {
+          showToast("❌ No se pudo eliminar: " + (err.message || err));
+        }
+      });
+    });
+    cont.querySelector("#btnNuevaCategoria").addEventListener("click", () => {
+      openCategoryForm(null, async () => { await paintCategorias(); });
+    });
+  }
+
+  function openCategoryForm(category, onSaved) {
+    const isNew = !category;
+    const c = category || { id: "cat-" + Date.now(), label: "", icon: "🍽️" };
+    const { close, sheet: formSheet } = openModal(`
+      <div class="modal-handle"></div>
+      <div class="modal-title">${isNew ? "NUEVA CATEGORÍA" : "EDITAR CATEGORÍA"}</div>
+      <div style="display:flex;gap:8px;">
+        <div style="width:70px;">
+          <label class="modal-input-label">ÍCONO</label>
+          <input class="modal-input" id="cIcon" value="${c.icon}" style="text-align:center;">
+        </div>
+        <div style="flex:1;">
+          <label class="modal-input-label">NOMBRE</label>
+          <input class="modal-input" id="cLabel" value="${c.label}" placeholder="Ej: Completos">
+        </div>
+      </div>
+      <button class="modal-btn" id="cSave" type="button">GUARDAR</button>
+    `);
+    formSheet.querySelector("#cSave").addEventListener("click", async () => {
+      const label = formSheet.querySelector("#cLabel").value.trim();
+      if (!label) return showToast("Ingresa un nombre para la categoría");
+      const updated = { ...c, label, icon: formSheet.querySelector("#cIcon").value.trim() || "🍽️" };
+      try {
+        await adapter.admin.saveCategory(updated);
+        close();
+        onSaved();
+      } catch (err) {
+        showToast("❌ No se pudo guardar: " + (err.message || err));
       }
     });
   }

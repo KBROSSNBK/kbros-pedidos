@@ -1,6 +1,6 @@
 import { USE_MOCK, BRAND, DEFAULT_SETTINGS } from "./config.js";
 import { getAdapter } from "./data/dataAdapter.js";
-import { getAllProducts, getCategories } from "./data/menuData.js";
+import { getAllProducts, getCategories as getLocalCategories } from "./data/menuData.js";
 import { initNav, goToView } from "./ui/nav.js";
 import { renderHomeSections, initCatalog } from "./ui/menu.js";
 import { initCartBar, openCartSheet, setPointsConversion, setCheckoutSettings } from "./ui/cartUI.js";
@@ -51,7 +51,13 @@ async function bootstrap() {
   } catch {
     products = getAllProducts();
   }
-  const categories = getCategories();
+  // Categorías: mismo patrón que productos, editables desde el panel admin.
+  let categories;
+  try {
+    categories = await adapter.getCategories();
+  } catch {
+    categories = getLocalCategories();
+  }
 
   let bestSellers;
   try {
