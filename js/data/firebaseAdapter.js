@@ -60,11 +60,6 @@ const firebaseConfig = {
   authDomain: "kbros-web.firebaseapp.com",
   databaseURL: "https://kbros-web-default-rtdb.firebaseio.com",
   projectId: "kbros-web",
-  // OJO: Firebase Storage nunca se activó para este proyecto (verificado: no existe ningún
-  // bucket bajo ningún nombre posible). Hay que habilitarlo desde la consola de Firebase
-  // (Storage -> "Comenzar") antes de que la subida de fotos pueda funcionar. Este es el
-  // nombre de bucket que usan los proyectos nuevos por defecto; confírmalo en la consola
-  // una vez que lo actives y avísame si es distinto.
   storageBucket: "kbros-web.firebasestorage.app",
   messagingSenderId: "281753184526",
   appId: "1:281753184526:web:c6e824fefd7b261a428f5f",
@@ -126,17 +121,29 @@ async function obtenerCumpleanosDeGoogle(accessToken) {
   }
 }
 
-let storagePromise = null;
-async function initStorage() {
-  await initFirebase();
-  if (!storagePromise) {
-    storagePromise = (async () => {
-      await loadScript("https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js");
-      // eslint-disable-next-line no-undef
-      return firebase.storage();
-    })();
-  }
-  return storagePromise;
+/** Reduce una imagen a un dataURL liviano (máx ~640px) para guardarla directo en la base
+ * de datos, sin depender de Firebase Storage (que requiere el plan de pago Blaze). */
+function fileToCompressedDataUrl(file, maxSize = 640) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function genCode(existingCheck) {
@@ -587,13 +594,10 @@ export const firebaseAdapter = {
       await db.ref("settings/missions/" + id).remove();
     },
     async uploadProductImage(productId, file) {
-      const storage = await initStorage();
-      const ref = storage.ref("productImages/" + productId + "-" + Date.now());
-      await ref.put(file);
-      const url = await ref.getDownloadURL();
+      const dataUrl = await fileToCompressedDataUrl(file);
       const { db } = await initFirebase();
-      await db.ref("products/" + productId + "/image").set(url);
-      return url;
+      await db.ref("products/" + productId + "/image").set(dataUrl);
+      return dataUrl;
     },
   },
 };
