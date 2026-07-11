@@ -88,13 +88,22 @@ function notifyAuth() {
 
 /** Reduce una imagen a un dataURL liviano (máx ~640px) para no saturar localStorage. */
 function fileToCompressedDataUrl(file, maxSize = 640) {
+  // Las fotos de iPhone quedan en formato HEIC por defecto, que la mayoría de los
+  // navegadores no pueden decodificar como <img> — sin este aviso, el botón se queda
+  // "cargando" para siempre sin explicar por qué.
+  const esHeic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name || "");
+  if (esHeic) {
+    return Promise.reject(new Error("Ese formato de foto (HEIC) no se puede subir. En el iPhone: Ajustes → Cámara → Formatos → elige \"Más compatible\", o comparte la foto por WhatsApp primero (la convierte a JPG) y sube esa versión."));
+  }
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("La imagen tardó demasiado en procesarse. Prueba con otra foto en formato JPG o PNG.")), 10000);
+    const settle = (fn) => (...args) => { clearTimeout(timeout); fn(...args); };
     const reader = new FileReader();
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = settle(() => reject(reader.error));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      img.onload = () => {
+      img.onerror = settle(() => reject(new Error("No se pudo leer esa imagen. Prueba con otra foto en formato JPG o PNG.")));
+      img.onload = settle(() => {
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
@@ -103,7 +112,7 @@ function fileToCompressedDataUrl(file, maxSize = 640) {
         canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
+      });
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
