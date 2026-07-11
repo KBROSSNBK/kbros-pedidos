@@ -1,6 +1,6 @@
 import { createStore } from "./store.js";
 import { getAdapter } from "../data/dataAdapter.js";
-import { ADMIN_EMAIL } from "../config.js";
+import { ADMIN_EMAIL, sanitizeEmailKey } from "../config.js";
 
 const CONTACT_KEY = "kbros_contact_v1";
 
@@ -25,14 +25,14 @@ export async function initSession() {
       const userData = await adapter.getOrCreateUser(authUser);
       // El correo en config.js es el super-admin fijo (siempre admin, no se puede quitar desde
       // la app). El admin principal puede sumar otros correos desde Panel Admin -> Ajustes,
-      // sin tocar Firebase directamente: quedan guardados en settings.adminEmails.
-      let adminEmails = [];
+      // sin tocar Firebase directamente: quedan guardados en settings.adminEmailsMap.
+      let adminEmailsMap = {};
       try {
         const settings = await adapter.getSettings();
-        adminEmails = settings.adminEmails || [];
+        adminEmailsMap = settings.adminEmailsMap || {};
       } catch { /* si falla, igual queda el super-admin como respaldo */ }
       const email = (authUser.email || "").toLowerCase();
-      const isAdmin = email === ADMIN_EMAIL.toLowerCase() || adminEmails.map((e) => e.toLowerCase()).includes(email);
+      const isAdmin = email === ADMIN_EMAIL.toLowerCase() || adminEmailsMap[sanitizeEmailKey(email)] === true;
       sessionStore.setState({ ready: true, authUser, userData, isAdmin, guestMode: false });
       unsubUserData = adapter.onUserData(authUser.uid, (fresh) => {
         if (fresh) sessionStore.setState({ userData: fresh });

@@ -15,6 +15,15 @@ export const USE_MOCK = false;
 
 export const ADMIN_EMAIL = "kbros.contacto@gmail.com";
 
+/** Firebase Realtime Database no permite el carácter "." en las claves de un nodo.
+ * Se usa para guardar/verificar administradores como claves de un mapa (ver
+ * DEFAULT_SETTINGS.adminEmailsMap) en vez de un array, porque las reglas de seguridad de
+ * Firebase sí pueden comprobar la existencia de una clave, pero no "¿está este valor
+ * dentro de este array?". */
+export function sanitizeEmailKey(email) {
+  return (email || "").trim().toLowerCase().replace(/\./g, ",");
+}
+
 export const DEFAULT_SETTINGS = {
   pointsPerClp: 100, // $100 CLP = 1 K-POINT
   bonoCumpleanos: 500, // mismo nombre de campo que la Firebase real (settings/bonoCumpleanos)
@@ -25,7 +34,11 @@ export const DEFAULT_SETTINGS = {
   deliveryBaseFee: 1700,
   deliveryPerKmFee: 300,
   deliveryFreeKm: 1,
-  adminEmails: [], // administradores extra, agregados desde Panel Admin -> Ajustes (sin tocar Firebase)
+  // Administradores extra, agregados desde Panel Admin -> Ajustes (sin tocar Firebase a mano).
+  // Mapa { correo_saneado: true } y no un array: las reglas de seguridad de Firebase no
+  // pueden comprobar "¿está este correo en esta lista?" sobre un array, pero sí sobre las
+  // claves de un mapa (ver sanitizeEmailKey más abajo).
+  adminEmailsMap: {},
 
   // Racha semanal: por cada semana consecutiva con al menos 1 pedido aprobado, sube el
   // descuento automático que se aplica en el siguiente pedido. Todo configurable desde

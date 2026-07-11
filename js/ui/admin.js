@@ -2,7 +2,7 @@ import { getAdapter } from "../data/dataAdapter.js";
 import { openModal } from "./modal.js";
 import { showToast } from "./toast.js";
 import { getCategories } from "../data/menuData.js";
-import { ADMIN_EMAIL, USE_MOCK } from "../config.js";
+import { ADMIN_EMAIL, USE_MOCK, sanitizeEmailKey } from "../config.js";
 import { calcularRango } from "../state/rank.js";
 
 const CLP = new Intl.NumberFormat("es-CL");
@@ -624,21 +624,22 @@ export async function openAdminPanel() {
         <button class="modal-btn outline" id="btnAddAdminEmail" type="button" style="width:auto;margin:0;padding:0 1rem;white-space:nowrap;">Añadir</button>
       </div>`;
 
-    function renderAdminChips(emails) {
+    function renderAdminChips(map) {
+      const keys = Object.keys(map || {});
       const box = cont.querySelector("#adminEmailChips");
-      box.innerHTML = emails.length
-        ? emails.map((e) => `
+      box.innerHTML = keys.length
+        ? keys.map((key) => `
             <span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:999px;padding:0.3rem 0.5rem 0.3rem 0.8rem;font-size:0.78rem;">
-              ${e}
-              <button type="button" data-remove="${e}" style="background:none;border:none;color:var(--red);font-size:0.85rem;padding:2px;">✕</button>
+              ${key.replace(/,/g, ".")}
+              <button type="button" data-remove="${key}" style="background:none;border:none;color:var(--red);font-size:0.85rem;padding:2px;">✕</button>
             </span>`).join("")
         : `<span class="demo-note">Todavía no hay administradores adicionales.</span>`;
       box.querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          const updated = emails.filter((e) => e !== btn.dataset.remove);
           try {
-            const saved = await adapter.admin.saveSettings({ adminEmails: updated });
-            renderAdminChips(saved.adminEmails || updated);
+            const saved = await adapter.admin.saveSettings({ [`adminEmailsMap/${btn.dataset.remove}`]: null });
+            s.adminEmailsMap = saved.adminEmailsMap || {};
+            renderAdminChips(s.adminEmailsMap);
             showToast("Administrador quitado");
           } catch (err) {
             showToast("❌ No se pudo quitar: " + (err.message || err));
@@ -646,20 +647,19 @@ export async function openAdminPanel() {
         });
       });
     }
-    renderAdminChips(s.adminEmails || []);
+    renderAdminChips(s.adminEmailsMap || {});
 
     cont.querySelector("#btnAddAdminEmail").addEventListener("click", async () => {
       const input = cont.querySelector("#sNewAdminEmail");
       const email = input.value.trim().toLowerCase();
       if (!email || !email.includes("@")) return showToast("Ingresa un correo válido");
       if (email === ADMIN_EMAIL.toLowerCase()) return showToast("Ese correo ya es administrador principal");
-      const current = s.adminEmails || [];
-      if (current.includes(email)) return showToast("Ese correo ya es administrador");
-      const updated = [...current, email];
+      const key = sanitizeEmailKey(email);
+      if ((s.adminEmailsMap || {})[key]) return showToast("Ese correo ya es administrador");
       try {
-        const saved = await adapter.admin.saveSettings({ adminEmails: updated });
-        s.adminEmails = saved.adminEmails || updated;
-        renderAdminChips(s.adminEmails);
+        const saved = await adapter.admin.saveSettings({ [`adminEmailsMap/${key}`]: true });
+        s.adminEmailsMap = saved.adminEmailsMap || {};
+        renderAdminChips(s.adminEmailsMap);
         input.value = "";
         showToast("✅ Administrador agregado");
       } catch (err) {

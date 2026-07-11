@@ -522,7 +522,19 @@ export const mockAdapter = {
       return read(KEY.settings, DEFAULT_SETTINGS);
     },
     async saveSettings(patch) {
-      const settings = { ...DEFAULT_SETTINGS, ...read(KEY.settings, {}), ...patch };
+      const settings = { ...DEFAULT_SETTINGS, ...read(KEY.settings, {}) };
+      // Imita el update() de Firebase: una clave con "/" es una ruta anidada (p.ej.
+      // "adminEmailsMap/correo,com"), no una propiedad literal con esos caracteres.
+      Object.entries(patch).forEach(([key, value]) => {
+        if (key.includes("/")) {
+          const [parent, child] = key.split("/");
+          settings[parent] = settings[parent] || {};
+          if (value === null) delete settings[parent][child];
+          else settings[parent][child] = value;
+        } else {
+          settings[key] = value;
+        }
+      });
       write(KEY.settings, settings);
       return settings;
     },
