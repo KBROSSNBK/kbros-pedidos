@@ -1,4 +1,4 @@
-import { ADMIN_EMAIL, DEFAULT_SETTINGS, DEFAULT_MISSIONS } from "../config.js";
+import { ADMIN_EMAIL, DEFAULT_SETTINGS } from "../config.js";
 import { getAllProducts, getCategories as getLocalCategories } from "./menuData.js";
 import { calcularNuevaRacha } from "../state/streak.js";
 
@@ -226,11 +226,9 @@ export const firebaseAdapter = {
   async getMissions() {
     const { db } = await initFirebase();
     const snap = await db.ref("settings/missions").get();
-    if (snap.exists()) return Object.values(snap.val()).map(normalizeMission);
-    const obj = {};
-    DEFAULT_MISSIONS.forEach((m) => (obj[m.id] = m));
-    await db.ref("settings/missions").set(obj);
-    return DEFAULT_MISSIONS;
+    // Sin re-sembrar cuando está vacío: si el admin borró todas las misiones a propósito,
+    // no deben resucitar solas la próxima vez que un cliente abra la pestaña de Misiones.
+    return snap.exists() ? Object.values(snap.val()).map(normalizeMission) : [];
   },
 
   async getMissionProgress(uid) {
@@ -595,7 +593,7 @@ export const firebaseAdapter = {
     async getMissionsAdmin() {
       const { db } = await initFirebase();
       const snap = await db.ref("settings/missions").get();
-      return snap.exists() ? Object.values(snap.val()).map(normalizeMission) : DEFAULT_MISSIONS;
+      return snap.exists() ? Object.values(snap.val()).map(normalizeMission) : [];
     },
     async saveMission(mission) {
       const { db } = await initFirebase();
