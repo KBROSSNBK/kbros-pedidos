@@ -133,4 +133,14 @@ async function bootstrap() {
   document.title = `${BRAND.name} — Pide en menos de 30 segundos`;
 }
 
-bootstrap();
+// Pantalla de carga: se muestra al menos MIN_SPLASH_MS (para que la animación de marca
+// se note) y espera a que bootstrap() termine si toma más que eso, así nunca se oculta
+// mientras la página sigue armándose.
+const MIN_SPLASH_MS = 3200;
+const splashStart = Date.now();
+bootstrap().finally(() => {
+  const remaining = Math.max(0, MIN_SPLASH_MS - (Date.now() - splashStart));
+  setTimeout(() => {
+    document.getElementById("splashScreen")?.classList.add("hide");
+  }, remaining);
+});
