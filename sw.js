@@ -4,7 +4,7 @@
  * Sube el número de CACHE_VERSION cuando cambien los archivos precacheados
  * para forzar a los clientes a bajar la versión nueva.
  */
-const CACHE_VERSION = "kbros-v2";
+const CACHE_VERSION = "kbros-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -69,7 +69,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Resto de assets: cache primero (rápido), y de paso se refresca en segundo plano.
+  // Código (JS/CSS/manifest): red primero. Este archivo cambia seguido mientras se sigue
+  // desarrollando la app — con cache-first, una corrección publicada podía no llegar a
+  // mostrarse hasta la siguiente recarga (o nunca, si el cliente no volvía a cargar en
+  // frío), dando la falsa impresión de que un arreglo "no funcionó". Solo si no hay
+  // conexión se usa la copia guardada, para que la app siga sirviendo algo sin internet.
+  if (/\.(js|css|json|webmanifest)$/.test(new URL(request.url).pathname)) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE_VERSION).then((cache) => cache.put(request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Resto de assets (imágenes, íconos): cache primero (rápido, cambian poco), y de paso
+  // se refrescan en segundo plano.
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)
