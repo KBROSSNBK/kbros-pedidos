@@ -32,6 +32,26 @@ function normalizeMission(m) {
   };
 }
 
+/** La página anterior guardaba las misiones como una lista (array), y Firebase traduce
+ * eso a claves "0", "1"... en vez de guardar cada misión bajo su propio id. saveMission()
+ * y deleteMission() escriben en "settings/missions/{id}" — con esas claves numéricas ese
+ * path nunca existía, así que editar o eliminar esas misiones no hacía nada (o creaba una
+ * copia nueva en vez de reemplazar la vieja). Esto reconstruye el nodo con las claves
+ * correctas la primera vez que se lee, dejándolo sano para siempre.
+ * Devuelve { fixed: boolean, missions: {id: mission} }. */
+async function migrateMissionsIfNeeded(db, raw) {
+  const entries = Object.entries(raw);
+  const needsFix = entries.some(([key, m]) => key !== m.id);
+  if (!needsFix) return { fixed: false, missions: raw };
+  const rebuilt = {};
+  entries.forEach(([, m]) => {
+    const normalized = normalizeMission(m);
+    if (normalized?.id) rebuilt[normalized.id] = normalized; // el último con ese id gana (la version mas nueva)
+  });
+  await db.ref("settings/missions").set(rebuilt);
+  return { fixed: true, missions: rebuilt };
+}
+
 function computeProgress(u, period) {
   const hist = Object.values(u.historial || {}).filter(
     (h) => h.tipo === "puntos_aprobados" && h.fecha >= MISSIONS_TRACKING_SINCE && periodKey(new Date(h.fecha)) === period
@@ -228,7 +248,9 @@ export const firebaseAdapter = {
     const snap = await db.ref("settings/missions").get();
     // Sin re-sembrar cuando está vacío: si el admin borró todas las misiones a propósito,
     // no deben resucitar solas la próxima vez que un cliente abra la pestaña de Misiones.
-    return snap.exists() ? Object.values(snap.val()).map(normalizeMission) : [];
+    if (!snap.exists()) return [];
+    const { missions } = await migrateMissionsIfNeeded(db, snap.val());
+    return Object.values(missions).map(normalizeMission);
   },
 
   async getMissionProgress(uid) {
@@ -593,7 +615,9 @@ export const firebaseAdapter = {
     async getMissionsAdmin() {
       const { db } = await initFirebase();
       const snap = await db.ref("settings/missions").get();
-      return snap.exists() ? Object.values(snap.val()).map(normalizeMission) : [];
+      if (!snap.exists()) return [];
+      const { missions } = await migrateMissionsIfNeeded(db, snap.val());
+      return Object.values(missions).map(normalizeMission);
     },
     async saveMission(mission) {
       const { db } = await initFirebase();
