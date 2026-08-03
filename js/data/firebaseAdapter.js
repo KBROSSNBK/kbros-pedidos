@@ -141,9 +141,16 @@ async function obtenerCumpleanosDeGoogle(accessToken) {
   }
 }
 
-/** Reduce una imagen a un dataURL liviano (máx ~640px) para guardarla directo en la base
- * de datos, sin depender de Firebase Storage (que requiere el plan de pago Blaze). */
-function fileToCompressedDataUrl(file, maxSize = 640) {
+// Proporción fija de las fotos de producto (4:3, como cualquier app de pedidos) — todas
+// las tarjetas quedan del mismo tamaño sin importar la foto que suba cada admin.
+const PRODUCT_PHOTO_W = 640;
+const PRODUCT_PHOTO_H = 480;
+
+/** Reduce una imagen a un dataURL liviano y la recorta al centro a 4:3, para guardarla
+ * directo en la base de datos sin depender de Firebase Storage (que requiere el plan de
+ * pago Blaze). El recorte (en vez de estirar) es lo que evita que una foto vertical u
+ * horizontal quede deformada o con un tamaño distinto al resto en las tarjetas. */
+function fileToCompressedDataUrl(file) {
   // Las fotos de iPhone quedan en formato HEIC por defecto, que la mayoría de los
   // navegadores no pueden decodificar como <img> — sin este aviso, el botón se queda
   // "cargando" para siempre sin explicar por qué. Se detecta por tipo o extensión, ya que
@@ -163,13 +170,26 @@ function fileToCompressedDataUrl(file, maxSize = 640) {
       const img = new Image();
       img.onerror = settle(() => reject(new Error("No se pudo leer esa imagen. Prueba con otra foto en formato JPG o PNG.")));
       img.onload = settle(() => {
-        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
+        // Recorte al centro (estilo "cover"): la foto original puede ser vertical,
+        // horizontal o cuadrada, pero el resultado siempre sale en la misma proporción.
+        const targetRatio = PRODUCT_PHOTO_W / PRODUCT_PHOTO_H;
+        const srcRatio = img.width / img.height;
+        let sx, sy, sw, sh;
+        if (srcRatio > targetRatio) {
+          sh = img.height;
+          sw = sh * targetRatio;
+          sx = (img.width - sw) / 2;
+          sy = 0;
+        } else {
+          sw = img.width;
+          sh = sw / targetRatio;
+          sx = 0;
+          sy = (img.height - sh) / 2;
+        }
         const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.width = PRODUCT_PHOTO_W;
+        canvas.height = PRODUCT_PHOTO_H;
+        canvas.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, PRODUCT_PHOTO_W, PRODUCT_PHOTO_H);
         resolve(canvas.toDataURL("image/jpeg", 0.82));
       });
       img.src = reader.result;

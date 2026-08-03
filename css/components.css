@@ -154,6 +154,7 @@
 
 .product-photo {
   aspect-ratio: 4 / 3;
+  overflow: hidden; /* corta cualquier foto que se pase de la proporción del recuadro */
   background: linear-gradient(135deg, #fff, #f1f1f1);
   display: flex; align-items: center; justify-content: center;
   font-size: 2.4rem;
