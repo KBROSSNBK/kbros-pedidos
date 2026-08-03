@@ -219,12 +219,12 @@
 .promo-grid .product-card, .best-grid .product-card { width: 168px; }
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* auto-fill con un mínimo/máximo por tarjeta: agrega columnas solas a medida que hay
+   * más espacio, en vez de estirar 2-3 tarjetas fijas hasta ocupar toda la pantalla
+   * (eso hacía que en un monitor ancho cada tarjeta terminara gigante). */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.7rem;
   padding: 0 1rem 0.5rem;
-}
-@media (min-width: 560px) {
-  .catalog-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ============== CATEGORÍAS (chips) ============== */
