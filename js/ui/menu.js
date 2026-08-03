@@ -28,7 +28,11 @@ export function initCatalog({ products, categories }) {
   const searchBox = document.getElementById("searchBox");
   const searchClear = document.getElementById("searchClear");
 
-  let activeCategory = categories[0]?.id || null;
+  // Solo categorías con al menos un producto: si no, quedaba un chip que al tocarlo no
+  // llevaba a ningún lado (porque esa categoría nunca pinta su bloque en el catálogo).
+  const categoriesWithProducts = categories.filter((cat) => products.some((p) => p.category === cat.id));
+
+  let activeCategory = categoriesWithProducts[0]?.id || null;
   let spyObserver = null;
 
   function setActiveChip(catId) {
@@ -39,7 +43,7 @@ export function initCatalog({ products, categories }) {
   }
 
   tabsEl.innerHTML = "";
-  categories.forEach((cat) => {
+  categoriesWithProducts.forEach((cat) => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "category-chip" + (cat.id === activeCategory ? " active" : "");
@@ -77,12 +81,11 @@ export function initCatalog({ products, categories }) {
   function paintFullCatalog() {
     tabsEl.style.display = "flex";
     gridEl.innerHTML = "";
-    const catsConProductos = categories.filter((cat) => products.some((p) => p.category === cat.id));
-    if (catsConProductos.length === 0) {
+    if (categoriesWithProducts.length === 0) {
       gridEl.innerHTML = `<div class="empty-state">Todavía no hay productos.</div>`;
       return;
     }
-    catsConProductos.forEach((cat) => {
+    categoriesWithProducts.forEach((cat) => {
       const block = document.createElement("div");
       block.className = "catalog-category-block";
       block.id = "catBlock-" + cat.id;
@@ -105,7 +108,7 @@ export function initCatalog({ products, categories }) {
       },
       { rootMargin: "-130px 0px -55% 0px", threshold: [0, 0.1, 0.25, 0.5, 0.75] }
     );
-    catsConProductos.forEach((cat) => {
+    categoriesWithProducts.forEach((cat) => {
       const el = document.getElementById("catBlock-" + cat.id);
       if (el) spyObserver.observe(el);
     });
