@@ -49,7 +49,14 @@ export function initCatalog({ products, categories }) {
         (p) => normalize(p.name).includes(q) || normalize(p.description).includes(q)
       );
     } else {
-      list = products.filter((p) => p.category === activeCategory);
+      // El orden dentro de la categoría lo define el admin (ver panel admin -> Productos,
+      // botones ▲▼); los productos sin orden asignado todavía usan su posición actual
+      // como respaldo (índice), para no dejar el comparador con NaN si a ninguno le
+      // asignaron orden aún.
+      list = products
+        .filter((p) => p.category === activeCategory)
+        .map((p, i) => ({ ...p, order: p.order ?? i }))
+        .sort((a, b) => a.order - b.order);
     }
 
     tabsEl.style.display = showTabs ? "flex" : "none";

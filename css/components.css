@@ -506,6 +506,9 @@
 .admin-product-row { display: flex; gap: 8px; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; }
 .admin-product-row .name { flex: 1; font-size: 0.84rem; }
 .admin-product-row .price { color: var(--accent); font-weight: 700; font-size: 0.82rem; }
+.admin-reorder-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.admin-reorder-btns .btn-add { width: 26px; height: 20px; font-size: 0.6rem; }
+.admin-reorder-btns .btn-add:disabled { opacity: 0.25; }
 .product-photo-uploader { display: flex; gap: 0.8rem; align-items: center; margin-bottom: 0.4rem; }
 .product-photo-preview {
   width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0;

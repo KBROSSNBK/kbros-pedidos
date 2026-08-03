@@ -8,6 +8,7 @@ const CLP = new Intl.NumberFormat("es-CL");
 
 export async function openAdminPanel() {
   const adapter = await getAdapter();
+  let selectedCategoryId = null; // se mantiene mientras el panel esté abierto
   const { sheet } = openModal(`
     <div class="modal-handle"></div>
     <div class="modal-title">👑 PANEL ADMIN</div>
@@ -17,7 +18,6 @@ export async function openAdminPanel() {
       <button class="admin-tab-btn" data-tab="historial" type="button">Historial</button>
       <button class="admin-tab-btn" data-tab="buscar" type="button">Clientes</button>
       <button class="admin-tab-btn" data-tab="productos" type="button">Productos</button>
-      <button class="admin-tab-btn" data-tab="categorias" type="button">Categorías</button>
       <button class="admin-tab-btn" data-tab="recompensas" type="button">Recompensas</button>
       <button class="admin-tab-btn" data-tab="misiones" type="button">Misiones</button>
       <button class="admin-tab-btn" data-tab="ajustes" type="button">Ajustes</button>
@@ -44,7 +44,6 @@ export async function openAdminPanel() {
         if (tab === "historial") await paintHistorialPedidos();
         if (tab === "buscar") paintBuscar();
         if (tab === "productos") await paintProductos();
-        if (tab === "categorias") await paintCategorias();
         if (tab === "recompensas") await paintRecompensas();
         if (tab === "misiones") await paintMisiones();
         if (tab === "ajustes") await paintAjustes();
@@ -292,25 +291,95 @@ export async function openAdminPanel() {
 
   async function paintProductos() {
     const cont = sheet.querySelector("#adminContent");
-    const [products, categories] = await Promise.all([adapter.admin.getAllProducts(), adapter.admin.getCategoriesAdmin()]);
+    const [allProducts, categories] = await Promise.all([adapter.admin.getAllProducts(), adapter.admin.getCategoriesAdmin()]);
+    if (categories.length === 0) {
+      cont.innerHTML = `<p class="empty-state">Crea al menos una categoría para empezar.</p><button class="modal-btn outline" id="btnNuevaCategoria" type="button">+ NUEVA CATEGORÍA</button>`;
+      cont.querySelector("#btnNuevaCategoria").addEventListener("click", () => {
+        openCategoryForm(null, async () => { await paintProductos(); });
+      });
+      return;
+    }
+    // Si la categoría seleccionada ya no existe (se eliminó) o todavía no hay ninguna, se
+    // usa la primera de la lista, así siempre queda algo filtrado y no una lista mezclada.
+    if (!selectedCategoryId || !categories.some((c) => c.id === selectedCategoryId)) {
+      selectedCategoryId = categories[0].id;
+    }
+    const countFor = (catId) => allProducts.filter((p) => p.category === catId).length;
     cont.innerHTML = `
-      <p class="demo-note" style="margin-bottom:0.6rem;">${USE_MOCK ? "Catálogo listo para editarse desde acá y guardarse en Firebase (nodo <code>products/</code>). Cambios aquí no afectan la página en línea mientras el prototipo esté en modo demostración." : "Los cambios acá se guardan de inmediato en Firebase y se reflejan en la página en línea."}</p>
-      <button class="modal-btn outline" id="btnNuevoProducto" type="button">+ NUEVO PRODUCTO</button>
+      <p class="demo-note" style="margin-bottom:0.6rem;">Elige una categoría para ver, ordenar y editar sus productos. Los cambios se guardan de inmediato y se reflejan en la página en línea${USE_MOCK ? " (excepto en modo demostración)" : ""}.</p>
+      <div id="categoryChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.7rem;"></div>
+      <div id="categoryActions" style="display:flex;gap:6px;margin-bottom:0.9rem;"></div>
+      <button class="modal-btn outline" id="btnNuevoProducto" type="button">+ NUEVO PRODUCTO EN ESTA CATEGORÍA</button>
       <div id="productList" style="margin-top:0.6rem;"></div>`;
+
+    const chipsBox = cont.querySelector("#categoryChips");
+    chipsBox.innerHTML =
+      categories
+        .map(
+          (c) => `
+        <button type="button" class="category-chip${c.id === selectedCategoryId ? " active" : ""}" data-id="${c.id}" style="border-radius:10px;">
+          ${c.icon || "🍽️"} ${c.label} <span style="opacity:0.7;">(${countFor(c.id)})</span>
+        </button>`
+        )
+        .join("") + `<button type="button" class="category-chip" id="btnNuevaCategoria" style="border-radius:10px;">+ Categoría</button>`;
+    chipsBox.querySelectorAll("[data-id]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        selectedCategoryId = chip.dataset.id;
+        paintProductos();
+      });
+    });
+    chipsBox.querySelector("#btnNuevaCategoria").addEventListener("click", () => {
+      openCategoryForm(null, async (savedId) => { selectedCategoryId = savedId; await paintProductos(); });
+    });
+
+    const selectedCat = categories.find((c) => c.id === selectedCategoryId);
+    cont.querySelector("#categoryActions").innerHTML = `
+      <button class="modal-btn outline" id="btnEditarCategoria" type="button" style="margin:0;flex:1;padding:0.6rem;">✎ Editar "${selectedCat.label}"</button>
+      <button class="modal-btn outline" id="btnEliminarCategoria" type="button" style="margin:0;flex:1;padding:0.6rem;color:var(--red);">✕ Eliminar categoría</button>`;
+    cont.querySelector("#btnEditarCategoria").addEventListener("click", () => {
+      openCategoryForm(selectedCat, async () => { await paintProductos(); });
+    });
+    cont.querySelector("#btnEliminarCategoria").addEventListener("click", async () => {
+      try {
+        await adapter.admin.deleteCategory(selectedCat.id);
+        selectedCategoryId = null;
+        await paintProductos();
+      } catch (err) {
+        showToast("❌ No se pudo eliminar: " + (err.message || err));
+      }
+    });
+
+    // Productos de la categoría elegida, en el orden en que se muestran en la página
+    // (los que no tienen orden asignado todavía caen al final, por su posición actual).
+    const products = allProducts
+      .filter((p) => p.category === selectedCategoryId)
+      .map((p, i) => ({ ...p, order: p.order ?? i }))
+      .sort((a, b) => a.order - b.order);
+
     const list = cont.querySelector("#productList");
-    list.innerHTML = products
-      .map((p) => `
+    if (products.length === 0) {
+      list.innerHTML = `<p class="empty-state">Todavía no hay productos en "${selectedCat.label}".</p>`;
+    } else {
+      list.innerHTML = products
+        .map(
+          (p, i) => `
         <div class="admin-product-row" data-id="${p.id}">
+          <div class="admin-reorder-btns">
+            <button class="btn-add" data-action="up" type="button" aria-label="Subir" ${i === 0 ? "disabled" : ""}>▲</button>
+            <button class="btn-add" data-action="down" type="button" aria-label="Bajar" ${i === products.length - 1 ? "disabled" : ""}>▼</button>
+          </div>
           <div class="name">${p.name}</div>
           <div class="price">$${CLP.format(p.price)}</div>
           <button class="btn-add" data-action="edit" type="button" aria-label="Editar">✎</button>
           <button class="btn-add" data-action="del" type="button" aria-label="Eliminar">✕</button>
-        </div>`)
-      .join("");
+        </div>`
+        )
+        .join("");
+    }
     list.querySelectorAll("[data-action='edit']").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.closest(".admin-product-row").dataset.id;
-        openProductForm(products.find((p) => p.id === id), categories, async () => { await paintProductos(); });
+        openProductForm(products.find((p) => p.id === id), categories, selectedCategoryId, products.length, async () => { await paintProductos(); });
       });
     });
     list.querySelectorAll("[data-action='del']").forEach((btn) => {
@@ -324,14 +393,33 @@ export async function openAdminPanel() {
         }
       });
     });
+    list.querySelectorAll("[data-action='up'], [data-action='down']").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.closest(".admin-product-row").dataset.id;
+        const idx = products.findIndex((p) => p.id === id);
+        const otherIdx = idx + (btn.dataset.action === "up" ? -1 : 1);
+        if (otherIdx < 0 || otherIdx >= products.length) return;
+        const a = products[idx];
+        const b = products[otherIdx];
+        try {
+          await Promise.all([
+            adapter.admin.saveProduct({ ...a, order: b.order }),
+            adapter.admin.saveProduct({ ...b, order: a.order }),
+          ]);
+          await paintProductos();
+        } catch (err) {
+          showToast("❌ No se pudo reordenar: " + (err.message || err));
+        }
+      });
+    });
     cont.querySelector("#btnNuevoProducto").addEventListener("click", () => {
-      openProductForm(null, categories, async () => { await paintProductos(); });
+      openProductForm(null, categories, selectedCategoryId, products.length, async () => { await paintProductos(); });
     });
   }
 
-  function openProductForm(product, categories, onSaved) {
+  function openProductForm(product, categories, defaultCategoryId, nextOrder, onSaved) {
     const isNew = !product;
-    const p = product || { id: "prod-" + Date.now(), category: categories[0].id, name: "", price: 0, description: "", image: "" };
+    const p = product || { id: "prod-" + Date.now(), category: defaultCategoryId || categories[0].id, name: "", price: 0, description: "", image: "", order: nextOrder };
     let currentImage = p.image || "";
     const { close, sheet: formSheet } = openModal(`
       <div class="modal-handle"></div>
@@ -392,44 +480,6 @@ export async function openAdminPanel() {
     });
   }
 
-  async function paintCategorias() {
-    const cont = sheet.querySelector("#adminContent");
-    const categories = await adapter.admin.getCategoriesAdmin();
-    cont.innerHTML = `
-      <p class="demo-note" style="margin-bottom:0.6rem;">Estas son las secciones del menú (Completos, Papas Fritas, etc). Eliminar una categoría no borra los productos que ya la usan, pero dejan de aparecer agrupados en el menú hasta que les asignes otra.</p>
-      <button class="modal-btn outline" id="btnNuevaCategoria" type="button">+ NUEVA CATEGORÍA</button>
-      <div id="categoryList" style="margin-top:0.6rem;"></div>`;
-    const list = cont.querySelector("#categoryList");
-    list.innerHTML = categories
-      .map((c) => `
-        <div class="admin-product-row" data-id="${c.id}">
-          <div class="name">${c.icon || "🍽️"} ${c.label}</div>
-          <button class="btn-add" data-action="edit" type="button" aria-label="Editar">✎</button>
-          <button class="btn-add" data-action="del" type="button" aria-label="Eliminar">✕</button>
-        </div>`)
-      .join("");
-    list.querySelectorAll("[data-action='edit']").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.closest(".admin-product-row").dataset.id;
-        openCategoryForm(categories.find((c) => c.id === id), async () => { await paintCategorias(); });
-      });
-    });
-    list.querySelectorAll("[data-action='del']").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const id = btn.closest(".admin-product-row").dataset.id;
-        try {
-          await adapter.admin.deleteCategory(id);
-          await paintCategorias();
-        } catch (err) {
-          showToast("❌ No se pudo eliminar: " + (err.message || err));
-        }
-      });
-    });
-    cont.querySelector("#btnNuevaCategoria").addEventListener("click", () => {
-      openCategoryForm(null, async () => { await paintCategorias(); });
-    });
-  }
-
   function openCategoryForm(category, onSaved) {
     const isNew = !category;
     const c = category || { id: "cat-" + Date.now(), label: "", icon: "🍽️" };
@@ -455,7 +505,7 @@ export async function openAdminPanel() {
       try {
         await adapter.admin.saveCategory(updated);
         close();
-        onSaved();
+        onSaved(updated.id);
       } catch (err) {
         showToast("❌ No se pudo guardar: " + (err.message || err));
       }
